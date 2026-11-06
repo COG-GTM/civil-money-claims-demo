@@ -1,0 +1,23 @@
+{% extends "make-claim/base.njk" %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% set title = "How much money are you claiming?" %}
+{% block main %}
+<span class="govuk-caption-l">Claim amount</span>
+<h1 class="govuk-heading-l">{{ title }}</h1>
+<p class="govuk-body">List each amount you are owed and what it is for. Do not include interest or the claim fee — these are added later.</p>
+<p class="govuk-body">You can claim up to £25,000 in this demo and add up to 10 items.</p>
+<form method="post" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+  {% for item in items %}
+  <fieldset class="govuk-fieldset claim-item govuk-!-margin-bottom-6">
+    <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">Item {{ loop.index }}</legend>
+    {{ govukInput({id: "item-" + loop.index0 + "-reason", name: "items[" + loop.index0 + "][reason]", label: {text: "What is this amount for?"}, hint: {text: "For example, an unpaid invoice or the cost of repairing damaged goods."}, value: item.reason, errorMessage: fieldErrors["item-" + loop.index0 + "-reason"], attributes: {maxlength: "500"} }) }}
+    {{ govukInput({id: "item-" + loop.index0 + "-amount", name: "items[" + loop.index0 + "][amount]", label: {text: "Amount"}, prefix: {text: "£"}, inputmode: "decimal", classes: "govuk-input--width-10", value: item.amount, errorMessage: fieldErrors["item-" + loop.index0 + "-amount"]}) }}
+    {% if items.length > 1 %}{{ govukButton({text: "Remove item " + loop.index, name: "action", value: "remove-" + loop.index0, classes: "govuk-button--secondary govuk-!-margin-bottom-0"}) }}{% endif %}
+  </fieldset>
+  {% endfor %}
+  {% if items.length < 10 %}<div>{{ govukButton({text: "Add another amount", name: "action", value: "add", classes: "govuk-button--secondary"}) }}</div>{% endif %}
+  {{ govukButton({text: "Save changes" if change else "Save and continue", name: "action", value: "save"}) }}
+</form>
+{% endblock %}

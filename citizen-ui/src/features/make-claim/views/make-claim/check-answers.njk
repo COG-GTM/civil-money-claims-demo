@@ -1,0 +1,39 @@
+{% extends "make-claim/base.njk" %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% set title = "Check your answers before submitting your claim" %}
+{% macro changeLink(path, label) %}<a class="govuk-link" href="/make-claim/{{ path }}?change=true">Change<span class="govuk-visually-hidden"> {{ label }}</span></a>{% endmacro %}
+{% block main %}
+<h1 class="govuk-heading-l">{{ title }}</h1>
+<p class="govuk-body">Check all the information carefully. You will not be able to change your answers once your claim has been issued.</p>
+{% for key, label, path in [["claimant", "Your details", "your-details"], ["defendant", "Defendant details", "defendant-details"]] %}
+  {% set party = claim[key] %}
+  <h2 class="govuk-heading-m">{{ label }}</h2>
+  <dl class="govuk-summary-list">
+    <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Name</dt><dd class="govuk-summary-list__value">{{ party.name }}<br>{{ "Person" if party.type == "INDIVIDUAL" else "Business" }}</dd><dd class="govuk-summary-list__actions">{{ changeLink(path, label) }}</dd></div>
+    <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Address</dt><dd class="govuk-summary-list__value">{{ party.address.line1 }}<br>{% if party.address.line2 %}{{ party.address.line2 }}<br>{% endif %}{{ party.address.city }}<br>{{ party.address.postcode }}<br>{{ party.address.country }}</dd><dd class="govuk-summary-list__actions">{{ changeLink(path, label + " address") }}</dd></div>
+    <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Email</dt><dd class="govuk-summary-list__value">{{ party.email or "Not provided" }}</dd><dd class="govuk-summary-list__actions">{{ changeLink(path, label + " email") }}</dd></div>
+    <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Telephone</dt><dd class="govuk-summary-list__value">{{ party.phone or "Not provided" }}</dd><dd class="govuk-summary-list__actions">{{ changeLink(path, label + " telephone") }}</dd></div>
+  </dl>
+{% endfor %}
+<h2 class="govuk-heading-m">Claim amount</h2>
+<dl class="govuk-summary-list">
+{% for item in claim.amountBreakdown %}<div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">{{ item.reason }}</dt><dd class="govuk-summary-list__value">{{ item.amount | money }}</dd><dd class="govuk-summary-list__actions">{{ changeLink("amount", "claim amount item " + loop.index) }}</dd></div>{% endfor %}
+<div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Interest</dt><dd class="govuk-summary-list__value">{% if claim.interest.claimed %}8% a year from {{ claim.interest.startDate | date }}<br>{{ quote.interestAmount | money }} so far ({{ quote.dailyInterest | money }} per day){% else %}Not claimed{% endif %}</dd><dd class="govuk-summary-list__actions">{{ changeLink("interest", "interest") }}</dd></div>
+</dl>
+<h2 class="govuk-heading-m">Claim details</h2>
+<dl class="govuk-summary-list">
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Reason for claim</dt><dd class="govuk-summary-list__value claim-prose">{{ claim.reason }}</dd><dd class="govuk-summary-list__actions">{{ changeLink("reason", "reason for claim") }}</dd></div>
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Timeline</dt><dd class="govuk-summary-list__value">{% for event in claim.timeline %}<p class="govuk-body"><strong>{{ event.date | date }}</strong><br><span class="claim-prose">{{ event.description }}</span></p>{% endfor %}</dd><dd class="govuk-summary-list__actions">{{ changeLink("timeline", "timeline of events") }}</dd></div>
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Evidence</dt><dd class="govuk-summary-list__value">{% if claim.documents.length %}<ul class="govuk-list">{% for document in claim.documents %}<li class="claim-filename">{{ document.fileName }}</li>{% endfor %}</ul>{% else %}No evidence uploaded{% endif %}</dd><dd class="govuk-summary-list__actions">{{ changeLink("evidence", "evidence") }}</dd></div>
+</dl>
+<h2 class="govuk-heading-m">Claim total</h2>
+{% include "make-claim/totals.njk" %}
+<h2 class="govuk-heading-m">Statement of truth</h2>
+<p class="govuk-body">In a real claim, you must confirm that the facts you have given are true. This demonstration does not start court proceedings.</p>
+<form method="post" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+  {{ govukCheckboxes({idPrefix: "statementOfTruth", name: "statementOfTruth", errorMessage: fieldErrors.statementOfTruth, items: [{value: "yes", text: "I believe that the facts stated in this claim are true", checked: claim.statementOfTruth}]}) }}
+  {{ govukButton({text: "Continue to payment"}) }}
+</form>
+{% endblock %}

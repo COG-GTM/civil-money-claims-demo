@@ -1,0 +1,35 @@
+{% extends "make-claim/base.njk" %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% set title = "Enter card details" %}
+{% block content %}
+<div class="govuk-grid-row">
+<div class="govuk-grid-column-two-thirds">
+  <span class="govuk-caption-l">Demo payment</span>
+  <h1 class="govuk-heading-l">{{ title }}</h1>
+  <div class="govuk-inset-text"><strong>No money will be taken.</strong><br>This is a mock payment, not GOV.UK Pay. Do not use a real card.<br>Use card number <strong>4242 4242 4242 4242</strong>, any future expiry date, a made-up name and security code <strong>123</strong>.</div>
+  {% if errors.length %}<p class="govuk-body">For your security, card fields have been cleared. Enter the test details again.</p>{% endif %}
+  <form method="post" novalidate autocomplete="off">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    {{ govukInput({id: "cardNumber", name: "cardNumber", label: {text: "Card number"}, hint: {text: "Use the test card number shown above."}, inputmode: "numeric", classes: "govuk-input--width-20", errorMessage: fieldErrors.cardNumber, attributes: {maxlength: "23", spellcheck: "false"} }) }}
+    {{ govukDateInput({id: "expiry", fieldset: {legend: {text: "Expiry date"} }, hint: {text: "For example, 12 / 35"}, errorMessage: fieldErrors.expiryMonth, items: [
+      {id: "expiryMonth", name: "expiryMonth", label: "Month", classes: "govuk-input--width-2"},
+      {id: "expiryYear", name: "expiryYear", label: "Year", classes: "govuk-input--width-4"}
+    ]}) }}
+    {{ govukInput({id: "cardholderName", name: "cardholderName", label: {text: "Name on card"}, hint: {text: "Use a made-up name, for example Alex Morgan."}, errorMessage: fieldErrors.cardholderName, attributes: {maxlength: "100"} }) }}
+    {{ govukInput({id: "securityCode", name: "securityCode", type: "password", inputmode: "numeric", classes: "govuk-input--width-3", label: {text: "Card security code"}, hint: {text: "Use 123 for this demo."}, errorMessage: fieldErrors.securityCode, attributes: {maxlength: "3"} }) }}
+    {{ govukButton({text: "Pay " + (quote.fee | money) + " and submit claim", preventDoubleClick: true}) }}
+  </form>
+  <p class="govuk-body"><a class="govuk-link" href="/make-claim/check-answers">Cancel payment and return to your claim</a></p>
+</div>
+<aside class="govuk-grid-column-one-third" aria-label="Payment summary">
+  <div class="claim-payment-summary">
+    <h2 class="govuk-heading-m">Payment summary</h2>
+    <p class="govuk-body">Money claim issue fee</p>
+    <p class="govuk-heading-l">{{ quote.fee | money }}</p>
+    <p class="govuk-body-s">The claim fee is the only amount you pay. The full claim total is {{ quote.totalAmount | money }}.</p>
+  </div>
+</aside>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "make-claim/base.njk" %}
+{% from "govuk/components/panel/macro.njk" import govukPanel %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/details/macro.njk" import govukDetails %}
+{% set title = "Claim submitted" %}
+{% block main %}
+{% set referenceHtml %}Your claim number<br><strong data-claim-reference="{{ claim.reference }}">{{ claim.reference }}</strong>{% endset %}
+{{ govukPanel({titleText: "Claim submitted", html: referenceHtml}) }}
+<p class="govuk-body govuk-!-margin-top-6">Your demo payment of <strong>{{ claim.fee | money }}</strong> was successful. No money has been taken and no real court claim has been made.</p>
+<p class="govuk-body">Keep your claim number. You can use it to find your claim and check its progress.</p>
+<h2 class="govuk-heading-m">What happens next</h2>
+<ol class="govuk-list govuk-list--number">
+  <li>The service generates a claim form and records a notification to the defendant. In this demo, no letter or email is sent.</li>
+  <li>{% if claim.responseDeadline %}The defendant can respond by <strong>{{ claim.responseDeadline | date }}</strong>.{% else %}The service will calculate the defendant’s response deadline. Check your dashboard for the date.{% endif %}</li>
+  <li>You can check the progress of your claim from your dashboard. If there is no response by the deadline, you may be able to request judgment.</li>
+</ol>
+{% if claim.serviceDate %}<p class="govuk-body-s">For this demo, the claim is treated as served on {{ claim.serviceDate | date }}. This is a simplified demonstration of the court process, not legal advice.</p>{% endif %}
+{{ govukButton({text: "View your claim", href: "/dashboard/" + claim.reference}) }}
+<p class="govuk-body"><a class="govuk-link" href="/dashboard">Go to your claims dashboard</a></p>
+{% if claim.securityCode %}
+  {% set responseDetails %}<p class="govuk-body">To try the defendant’s response, use claim number <strong>{{ claim.reference }}</strong> and security code <strong data-security-code="{{ claim.securityCode }}">{{ claim.securityCode }}</strong> at <a class="govuk-link" href="/respond">Respond to a claim</a>.</p><p class="govuk-body">These details are for this synthetic claim only.</p>{% endset %}
+  {{ govukDetails({summaryText: "Try responding to this demo claim", html: responseDetails}) }}
+{% endif %}
+<form method="post" action="/make-claim/new">
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+  {{ govukButton({text: "Start another demo claim", classes: "govuk-button--secondary"}) }}
+</form>
+{% endblock %}
