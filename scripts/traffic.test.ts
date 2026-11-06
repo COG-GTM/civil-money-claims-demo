@@ -73,13 +73,15 @@ test('HTTP errors and cross-origin redirects are not silently successful', async
 });
 
 test('a short duration does not wait for a long rate interval', async () => {
-  const server = createServer((_req, res) => { res.writeHead(503); res.end(); });
+  let requests = 0;
+  const server = createServer((_req, res) => { requests++; res.writeHead(503); res.end(); });
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
   try {
     const start = performance.now();
     const status = await run({ baseUrl: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, rate: 0.1,
       concurrency: 1, iterations: 0, durationSeconds: 0.02 }, AbortSignal.timeout(1000));
     assert.equal(status, 1);
+    assert.equal(requests, 1);
     assert.ok(performance.now() - start < 900, 'Duration should bound scheduling, not the 600-second interval');
   } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
 });

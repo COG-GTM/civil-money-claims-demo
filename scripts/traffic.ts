@@ -153,6 +153,7 @@ export async function run(config: TrafficConfig, signal: AbortSignal) {
     if (config.iterations && scheduled >= config.iterations) break;
     const remaining = config.durationSeconds ? Math.max(0, config.durationSeconds * 1000 - (performance.now() - start)) : Infinity;
     await delay(Math.min(60000 / config.rate, remaining), undefined, { signal }).catch(() => {});
+    if (remaining <= 60000 / config.rate) break;
   }
   await Promise.all(active);
   log({ event: 'summary', scheduled, passed, failed, skipped, duration_ms: Math.round(performance.now() - start) });
