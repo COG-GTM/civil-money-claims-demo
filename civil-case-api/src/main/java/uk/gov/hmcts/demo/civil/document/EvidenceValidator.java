@@ -2,7 +2,6 @@ package uk.gov.hmcts.demo.civil.document;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Locale;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.demo.civil.web.ApiException;
 
@@ -14,13 +13,9 @@ public class EvidenceValidator {
         if (content.length > MAX_SIZE) throw new ApiException(413, "FILE_TOO_LARGE", "The file must be 10 MB or smaller");
         if (content.length == 0) throw ApiException.invalid("file", "Choose a file that is not empty");
         String actual = detect(content);
-        String lower = fileName.toLowerCase(Locale.ROOT);
-        boolean extensionMatches = switch (actual) {
-            case "application/pdf" -> lower.endsWith(".pdf");
-            case "image/jpeg" -> lower.endsWith(".jpg") || lower.endsWith(".jpeg");
-            case "image/png" -> lower.endsWith(".png");
-            default -> false;
-        };
+        // The detected kind, extension and client-supplied MIME type must all agree.
+        boolean extensionMatches = EvidenceKind.fromContentType(actual)
+            .map(kind -> kind.matchesFileName(fileName)).orElse(false);
         if (!extensionMatches || !actual.equals(suppliedType)) {
             throw new ApiException(415,"UNSUPPORTED_FILE_TYPE","Upload a PDF, JPG or PNG with matching file contents");
         }

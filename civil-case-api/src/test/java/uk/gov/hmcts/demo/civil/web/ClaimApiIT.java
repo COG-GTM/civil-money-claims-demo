@@ -16,6 +16,7 @@ import java.util.concurrent.*;
 import org.apache.pdfbox.Loader;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -242,6 +243,28 @@ class ClaimApiIT {
         mvc.perform(delete("/api/claims/"+ref+"/documents/"+id)).andExpect(status().isNoContent());
         assertThat(getJson("/api/claims/"+ref+"/documents")).isEmpty();
         verify(scanner).scan(content);
+    }
+
+    // Regression: every evidence type the validator accepts must upload and record a labelled history event.
+    @ParameterizedTest
+    @CsvSource({
+        "sample-invoice.pdf,application/pdf,pdf document",
+        "receipt-photo.jpg,image/jpeg,jpeg image",
+        "sample-receipt.png,image/png,png image"})
+    void uploadsEveryAcceptedEvidenceType(String fileName,String type,String label) throws Exception {
+        String ref=createClaim().path("reference").asText();
+        // Real seed fixtures where they exist; a minimal JPEG (SOI + APP0 marker) otherwise.
+        Path fixture=Path.of("..","seed","evidence",fileName);
+        byte[] content=Files.exists(fixture)?Files.readAllBytes(fixture)
+            :new byte[]{(byte)0xFF,(byte)0xD8,(byte)0xFF,(byte)0xE0,0,16,'J','F','I','F',0};
+        mvc.perform(multipart("/api/claims/"+ref+"/documents").file(new MockMultipartFile("file",fileName,type,content)))
+            .andExpect(status().isCreated()).andExpect(jsonPath("$.contentType").value(type))
+            .andExpect(jsonPath("$.fileName").value(fileName));
+        assertThat(getJson("/api/claims/"+ref+"/documents")).hasSize(1);
+        assertThat(jdbc.queryForObject("""
+            select e.description from civil.claim_events e join civil.claims c on c.id=e.claim_id
+            where c.reference=? and e.type='EVIDENCE_UPLOADED'""",String.class,ref))
+            .isEqualTo("Evidence uploaded ("+label+")");
     }
 
     @Test void rejectsUnsupportedMismatchedAndOversizedEvidence() throws Exception {
