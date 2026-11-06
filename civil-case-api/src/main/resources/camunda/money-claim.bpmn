@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  id="moneyClaimDefinitions" targetNamespace="https://hmcts.demo/money-claim">
+  <bpmn:message id="claimIssuedMessage" name="CLAIM_ISSUED" />
+  <bpmn:message id="defendantResponseMessage" name="DEFENDANT_RESPONSE" />
+  <bpmn:process id="money-claim" name="Money claim — HMCTS demo" isExecutable="true" camunda:historyTimeToLive="30">
+    <bpmn:documentation>Synthetic demo only. The timer expires at midnight Europe/London AFTER the final response date. An event-based gateway cancels the losing message/timer subscription.</bpmn:documentation>
+    <bpmn:startEvent id="claimIssued" name="CLAIM_ISSUED">
+      <bpmn:messageEventDefinition messageRef="claimIssuedMessage" />
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="issuedToForm" sourceRef="claimIssued" targetRef="generateClaimForm" />
+    <bpmn:serviceTask id="generateClaimForm" name="Generate claim form (demo PDF)" camunda:delegateExpression="${generateClaimFormDelegate}" />
+    <bpmn:sequenceFlow id="formToNotification" sourceRef="generateClaimForm" targetRef="notifyDefendant" />
+    <bpmn:serviceTask id="notifyDefendant" name="Notify defendant (log stub)" camunda:delegateExpression="${notifyDefendantDelegate}" />
+    <bpmn:sequenceFlow id="notificationToAwaiting" sourceRef="notifyDefendant" targetRef="markAwaitingResponse" />
+    <bpmn:serviceTask id="markAwaitingResponse" name="Mark awaiting response" camunda:delegateExpression="${markAwaitingResponseDelegate}" />
+    <bpmn:sequenceFlow id="awaitingToGateway" sourceRef="markAwaitingResponse" targetRef="awaitResponse" />
+    <bpmn:eventBasedGateway id="awaitResponse" name="Response or deadline" />
+    <bpmn:sequenceFlow id="gatewayToResponse" sourceRef="awaitResponse" targetRef="responseReceived" />
+    <bpmn:intermediateCatchEvent id="responseReceived" name="DEFENDANT_RESPONSE">
+      <bpmn:messageEventDefinition messageRef="defendantResponseMessage" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:sequenceFlow id="responseToNotification" sourceRef="responseReceived" targetRef="notifyClaimant" />
+    <bpmn:serviceTask id="notifyClaimant" name="Notify claimant (log stub)" camunda:delegateExpression="${notifyClaimantDelegate}" />
+    <bpmn:sequenceFlow id="notificationToResponded" sourceRef="notifyClaimant" targetRef="responded" />
+    <bpmn:endEvent id="responded" name="RESPONDED" />
+    <bpmn:sequenceFlow id="gatewayToDeadline" sourceRef="awaitResponse" targetRef="responseDeadlineReached" />
+    <bpmn:intermediateCatchEvent id="responseDeadlineReached" name="Response deadline passed">
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDate xsi:type="bpmn:tFormalExpression">${responseDeadlineAt}</bpmn:timeDate>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:sequenceFlow id="deadlineToDefaultJudgment" sourceRef="responseDeadlineReached" targetRef="markAwaitingDefaultJudgment" />
+    <bpmn:serviceTask id="markAwaitingDefaultJudgment" name="Mark awaiting default judgment" camunda:delegateExpression="${markAwaitingDefaultJudgmentDelegate}" />
+    <bpmn:sequenceFlow id="defaultJudgmentToEnd" sourceRef="markAwaitingDefaultJudgment" targetRef="awaitingDefaultJudgment" />
+    <bpmn:endEvent id="awaitingDefaultJudgment" name="AWAITING_DEFAULT_JUDGMENT" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="moneyClaimDiagram">
+    <bpmndi:BPMNPlane id="moneyClaimPlane" bpmnElement="money-claim">
+      <bpmndi:BPMNShape id="claimIssuedShape" bpmnElement="claimIssued"><dc:Bounds x="60" y="122" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="30" y="165" width="96" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="generateClaimFormShape" bpmnElement="generateClaimForm"><dc:Bounds x="150" y="100" width="110" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="notifyDefendantShape" bpmnElement="notifyDefendant"><dc:Bounds x="310" y="100" width="110" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="markAwaitingResponseShape" bpmnElement="markAwaitingResponse"><dc:Bounds x="470" y="100" width="110" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="awaitResponseShape" bpmnElement="awaitResponse"><dc:Bounds x="630" y="115" width="50" height="50" /><bpmndi:BPMNLabel><dc:Bounds x="612" y="65" width="90" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="responseReceivedShape" bpmnElement="responseReceived"><dc:Bounds x="740" y="122" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="705" y="165" width="110" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="notifyClaimantShape" bpmnElement="notifyClaimant"><dc:Bounds x="850" y="100" width="110" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="respondedShape" bpmnElement="responded"><dc:Bounds x="1030" y="122" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1003" y="165" width="90" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="deadlineShape" bpmnElement="responseDeadlineReached"><dc:Bounds x="740" y="302" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="711" y="345" width="95" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="defaultJudgmentShape" bpmnElement="markAwaitingDefaultJudgment"><dc:Bounds x="850" y="280" width="110" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="defaultJudgmentEndShape" bpmnElement="awaitingDefaultJudgment"><dc:Bounds x="1030" y="302" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="990" y="345" width="120" height="60" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="issuedToFormEdge" bpmnElement="issuedToForm"><di:waypoint x="96" y="140" /><di:waypoint x="150" y="140" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="formToNotificationEdge" bpmnElement="formToNotification"><di:waypoint x="260" y="140" /><di:waypoint x="310" y="140" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="notificationToAwaitingEdge" bpmnElement="notificationToAwaiting"><di:waypoint x="420" y="140" /><di:waypoint x="470" y="140" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="awaitingToGatewayEdge" bpmnElement="awaitingToGateway"><di:waypoint x="580" y="140" /><di:waypoint x="630" y="140" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gatewayToResponseEdge" bpmnElement="gatewayToResponse"><di:waypoint x="680" y="140" /><di:waypoint x="740" y="140" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="responseToNotificationEdge" bpmnElement="responseToNotification"><di:waypoint x="776" y="140" /><di:waypoint x="850" y="140" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="notificationToRespondedEdge" bpmnElement="notificationToResponded"><di:waypoint x="960" y="140" /><di:waypoint x="1030" y="140" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gatewayToDeadlineEdge" bpmnElement="gatewayToDeadline"><di:waypoint x="655" y="165" /><di:waypoint x="655" y="320" /><di:waypoint x="740" y="320" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="deadlineToDefaultJudgmentEdge" bpmnElement="deadlineToDefaultJudgment"><di:waypoint x="776" y="320" /><di:waypoint x="850" y="320" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="defaultJudgmentToEndEdge" bpmnElement="defaultJudgmentToEnd"><di:waypoint x="960" y="320" /><di:waypoint x="1030" y="320" /></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
