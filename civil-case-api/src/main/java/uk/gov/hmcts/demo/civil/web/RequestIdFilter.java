@@ -11,10 +11,13 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import uk.gov.hmcts.demo.civil.service.OpsMetrics;
 
 @Component
 public class RequestIdFilter extends OncePerRequestFilter {
     private static final Logger LOG = LoggerFactory.getLogger(RequestIdFilter.class);
+    private final OpsMetrics metrics;
+    public RequestIdFilter(OpsMetrics metrics) { this.metrics = metrics; }
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
@@ -27,6 +30,8 @@ public class RequestIdFilter extends OncePerRequestFilter {
         try {
             chain.doFilter(request, response);
         } finally {
+            metrics.record(requestId, request.getMethod(), request.getRequestURI(), response.getStatus(),
+                (String) request.getAttribute("errorMessage"));
             LOG.atInfo().addKeyValue("method", request.getMethod()).addKeyValue("path", request.getRequestURI())
                 .addKeyValue("status", response.getStatus()).addKeyValue("duration_ms", (System.nanoTime() - start) / 1_000_000)
                 .log("HTTP request");
