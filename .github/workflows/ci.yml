@@ -48,3 +48,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker compose config --quiet
+  devindemos-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Build production-only image and enforce size budget
+        run: |
+          docker build -f Dockerfile.devindemos --build-arg GIT_SHA="$GITHUB_SHA" -t cmc-demo .
+          bytes=$(docker image inspect cmc-demo --format '{{.Size}}')
+          echo "Image size: $bytes bytes"
+          test "$bytes" -lt 1500000000
+      - name: Verify unstripped base path against real storage
+        run: |
+          docker run -d --name cmc-demo -p 3000:3000 -e BASE_PATH=/f2ec3d90 -e DD_TRACE_ENABLED=false cmc-demo
+          curl --fail --retry 120 --retry-delay 2 --retry-all-errors http://localhost:3000/f2ec3d90/health
+          curl --fail http://localhost:3000/f2ec3d90/legacy/health
+          curl --fail http://localhost:3000/f2ec3d90/api/claims/000MC001
+          curl --fail http://localhost:3000/f2ec3d90/legacy/api/claims/000LC001
+          TRAFFIC_BASE_URL=http://localhost:3000/f2ec3d90 TRAFFIC_ITERATIONS=3 TRAFFIC_RATE_PER_MINUTE=600 node scripts/traffic.ts
+      - if: failure()
+        run: docker logs cmc-demo || true

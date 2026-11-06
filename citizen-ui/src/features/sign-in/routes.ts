@@ -42,7 +42,7 @@ export function registerRoutes(app: Express): void {
 
   app.post('/sign-out', async (req, res) => {
     await new Promise<void>((resolve, reject) => req.session.destroy(error => error ? reject(error) : resolve()));
-    res.clearCookie('cmc.sid', { path: '/' });
+    res.clearCookie('cmc.sid', { path: req.baseUrl || '/' });
     res.redirect(303, '/sign-in');
   });
 }

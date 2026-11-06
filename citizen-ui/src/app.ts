@@ -7,11 +7,14 @@ import path from 'node:path';
 import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { featuresRoot, featureDirectories, registerFeatureRoutes } from './route-loader';
 import { logger } from './observability/logger';
+import { basePathMiddleware, normalizeBasePath } from './lib/base-path';
 
-export function createApp(): express.Express {
+export function createApp(mountPath = process.env.BASE_PATH || ''): express.Express {
+  const basePath = normalizeBasePath(mountPath);
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
+  if (basePath) app.use(basePathMiddleware(basePath));
   app.use(helmet({ contentSecurityPolicy: { directives: { scriptSrc: ["'self'"], upgradeInsecureRequests: null } } }));
   app.use((req, res, next) => {
     const supplied = req.get('X-Request-ID');
@@ -19,7 +22,7 @@ export function createApp(): express.Express {
     res.setHeader('X-Request-ID', req.requestId);
     const started = performance.now();
     // Mounted routers temporarily strip their prefix from req.path.
-    const requestPath = req.path;
+    const requestPath = req.originalUrl.split('?')[0];
     res.on('finish', () => logger.info({ request_id: req.requestId, method: req.method,
       path: requestPath, status: res.statusCode, duration_ms: Math.round(performance.now() - started) }, 'HTTP request'));
     next();
@@ -36,7 +39,7 @@ export function createApp(): express.Express {
   const MemoryStore = createMemoryStore(session);
   app.use(session({ secret, name: 'cmc.sid', resave: false, saveUninitialized: false,
     store: new MemoryStore({ checkPeriod: 86400000 }),
-    cookie: { httpOnly: true, sameSite: 'lax', secure: process.env.COOKIE_SECURE === 'true', maxAge: 8 * 60 * 60 * 1000 } }));
+    cookie: { path: basePath || '/', httpOnly: true, sameSite: 'lax', secure: process.env.COOKIE_SECURE === 'true', maxAge: 8 * 60 * 60 * 1000 } }));
   const env = nunjucks.configure([
     path.join(__dirname, 'views'),
     ...featureDirectories().map(name => path.join(featuresRoot, name, 'views')),
@@ -69,5 +72,10 @@ export function createApp(): express.Express {
     res.status(500).render('errors/service.njk', { requestId: req.requestId });
   };
   app.use(errorHandler);
-  return app;
+  if (!basePath) return app;
+  const mounted = express();
+  mounted.disable('x-powered-by');
+  mounted.get('/', (_req, res) => res.redirect(302, basePath + '/'));
+  mounted.use(basePath, app);
+  return mounted;
 }

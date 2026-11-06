@@ -1,0 +1,59 @@
+# syntax=docker/dockerfile:1
+FROM maven:3.9.9-eclipse-temurin-21 AS java-build
+WORKDIR /build
+COPY .mvn/settings.xml /root/.m2/settings.xml
+COPY civil-case-api/pom.xml civil-case-api/pom.xml
+COPY legacy-claim-store/pom.xml legacy-claim-store/pom.xml
+COPY civil-case-api/src/main civil-case-api/src/main
+COPY legacy-claim-store/src/main legacy-claim-store/src/main
+# Only production sources are copied; tests belong in CI, never the image build.
+RUN --mount=type=cache,target=/root/.m2/repository \
+    mvn -B -q -f civil-case-api/pom.xml -Dmaven.test.skip=true package && \
+    mvn -B -q -f legacy-claim-store/pom.xml -Dmaven.test.skip=true package && \
+    mvn -B -q -f civil-case-api/pom.xml dependency:copy \
+      -Dartifact=com.datadoghq:dd-java-agent:1.55.0 -DoutputDirectory=/agent
+
+FROM node:24-bookworm-slim AS ui-build
+WORKDIR /app/citizen-ui
+COPY citizen-ui/package*.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci
+COPY citizen-ui/ ./
+RUN npm run build && npm prune --omit=dev \
+    && apt-get update && apt-get install -y --no-install-recommends binutils \
+    && strip /usr/local/bin/node \
+    && arch="$(node -p process.arch)" \
+    && find node_modules/@datadog -mindepth 3 -maxdepth 3 -type d \
+      \( -name 'darwin-*' -o -name 'win32-*' -o -name 'linuxmusl-*' \
+      -o \( -name 'linux*' ! -name "*-$arch" \) \) -exec rm -rf {} +
+
+FROM eclipse-temurin:21-jre-jammy AS java-runtime
+FROM postgres:16-bookworm
+ARG GIT_SHA=unknown
+ENV DD_VERSION=$GIT_SHA
+ENV JAVA_HOME=/opt/java/openjdk \
+    PATH=/opt/java/openjdk/bin:$PATH \
+    PORT=3000 BASE_PATH="" NODE_ENV=production \
+    DD_ENV=demo DD_SITE=datadoghq.com DD_TRACE_ENABLED=true DD_LOGS_INJECTION=true \
+    DD_TRACE_AGENT_PORT=8126 \
+    POSTGRES_DB=claims POSTGRES_USER=claims POSTGRES_PASSWORD=local-demo-only \
+    DEMO_RESET_ENABLED=true DEMO_RESET_TOKEN=local-reset-only \
+    SESSION_SECRET=local-demo-change-me-32-characters COOKIE_SECURE=false
+RUN apt-get update && apt-get install -y --no-install-recommends nginx curl tini gettext-base \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system app && useradd --system --gid app --home-dir /app app
+COPY --from=java-runtime /opt/java/openjdk /opt/java/openjdk
+COPY --from=ui-build /usr/local/bin/node /usr/local/bin/node
+COPY --from=java-build /build/civil-case-api/target/app.jar /app/civil-case-api.jar
+COPY --from=java-build /build/legacy-claim-store/target/app.jar /app/legacy-claim-store.jar
+COPY --from=java-build /agent/dd-java-agent-1.55.0.jar /app/dd-java-agent.jar
+COPY --from=ui-build --chown=app:app /app/citizen-ui/dist /app/citizen-ui/dist
+COPY --from=ui-build --chown=app:app /app/citizen-ui/node_modules /app/citizen-ui/node_modules
+COPY --from=ui-build --chown=app:app /app/citizen-ui/package.json /app/citizen-ui/package.json
+COPY observability/java /app/observability/java
+COPY seed /app/seed
+COPY scripts/devindemos-entrypoint.sh /app/devindemos-entrypoint.sh
+WORKDIR /app/citizen-ui
+EXPOSE 3000
+HEALTHCHECK --interval=15s --timeout=5s --start-period=180s --retries=3 \
+    CMD curl --fail --silent "http://127.0.0.1:${PORT}${BASE_PATH}/health" || exit 1
+ENTRYPOINT ["/usr/bin/tini", "--", "/bin/bash", "/app/devindemos-entrypoint.sh"]

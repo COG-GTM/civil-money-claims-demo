@@ -17,6 +17,22 @@ test('CSRF token parsing supports meta/hidden attributes in either order', () =>
   assert.throws(() => csrfToken('<html></html>'));
 });
 
+test('base-path requests and redirects retain the unstripped deployment prefix', async () => {
+  const paths: string[] = [];
+  const server = createServer((req, res) => {
+    paths.push(req.url || '/');
+    if (req.url === '/f2ec3d90/sign-in') res.writeHead(303, { Location: '/f2ec3d90/dashboard' });
+    res.end('OK');
+  });
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const browser = new BrowserSession(`http://127.0.0.1:${(server.address() as AddressInfo).port}/f2ec3d90`);
+    await browser.request('/sign-in');
+    await browser.request('/f2ec3d90/respond');
+    assert.deepEqual(paths, ['/f2ec3d90/sign-in', '/f2ec3d90/dashboard', '/f2ec3d90/respond']);
+  } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
+});
+
 test('HTTP journeys preserve cookies/CSRF, upload real files and exercise every response type', async () => {
   const posts: { path: string; body: string; type: string }[] = [];
   let failures: string[] = [];

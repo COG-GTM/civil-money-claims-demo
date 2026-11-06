@@ -17,11 +17,47 @@ flowchart LR
   Legacy --> Old[(Same PostgreSQL: legacy_cmc<br/>JSON text claims · offers · documents)]
   UI & API & Legacy -. APM .-> Agent[Private Datadog agent]
   Agent --> DD[Datadog · env:demo]
-  UI & API & Legacy -. JSON stdout .-> Logs[Compose collector / Render HTTPS log stream]
+  UI & API & Legacy -. JSON stdout .-> Logs[Platform / Compose log collector]
   Logs --> DD
 ```
 
 The UI combines service lists and propagates request IDs/trace context. Each API owns its schema, Flyway history and domain logic. Camunda shares modern PostgreSQL transactions; legacy does not use Camunda.
+
+## All-in-one deployment image (current target)
+
+`Dockerfile.devindemos` packages PostgreSQL 16, both Java services, the Node UI and an nginx ingress.
+Only **port 3000** is published. The ingress forwards the **unstripped** path; Express and Spring own their context paths.
+Build stages compile production code only (no tests); the runtime contains a JRE, pruned Node dependencies and one shared Java tracer.
+
+```sh
+docker build -f Dockerfile.devindemos --build-arg GIT_SHA="$(git rev-parse HEAD)" -t cmc-demo .
+docker run --name cmc-demo -p 3000:3000 \
+  -e BASE_PATH=/f2ec3d90 -e DD_AGENT_HOST=your-private-agent-host \
+  -e SESSION_SECRET -e POSTGRES_PASSWORD -e DEMO_RESET_TOKEN \
+  -v cmc-demo-data:/var/lib/postgresql/data cmc-demo
+curl --fail http://localhost:3000/f2ec3d90/health
+TRAFFIC_BASE_URL=http://localhost:3000/f2ec3d90 TRAFFIC_ITERATIONS=3 node scripts/traffic.ts
+```
+
+Set the three secrets in your shell first (local-only defaults are provided if the flags are omitted).
+Use `DD_TRACE_ENABLED=false` when no agent exists. For an HTTPS ingress, set `COOKIE_SECURE=true`; forwarded protocol headers are preserved.
+The container starts the database, migrates/seeds both APIs, then starts the UI. Allow up to three minutes for initial readiness.
+Tini reaps children; any application/database process exit stops the entire container. Use at least **2 GB RAM**.
+The named volume persists PostgreSQL on restarts; omit it for disposable demo data. Do not run multiple containers against the same data directory.
+
+| Entry point | Path beneath the deployment origin |
+|---|---|
+| Citizen UI / health | `/f2ec3d90/` / `/f2ec3d90/health` |
+| Caseworker / operations | `/f2ec3d90/caseworker` / `/f2ec3d90/ops` |
+| Modern API / OpenAPI | `/f2ec3d90/api/claims` / `/f2ec3d90/swagger-ui.html` |
+| Legacy API / health | `/f2ec3d90/legacy/api/claims` / `/f2ec3d90/legacy/health` |
+| Camunda Cockpit | `/f2ec3d90/camunda` |
+
+`ARG GIT_SHA=unknown` sets `DD_VERSION` for all three services. APM goes to the **external** `DD_AGENT_HOST:8126`.
+Application stdout is JSON with distinct `service`, `env`, `version`, request ID and trace/span IDs.
+The platform must collect container stdout and parse/remap its JSON service field; `DD_AGENT_HOST` alone only transports APM, not logs.
+No agent or API key is bundled in the image, and no Datadog monitors/Slack routing are created.
+No public deployment is claimed here: this image is handed to the existing deployment platform.
 
 ## Local setup
 
@@ -118,9 +154,9 @@ Traffic uses real HTML/session/CSRF claim → upload → payment → response jo
 
 No monitors or Slack routing are created.
 
-## Render setup
+## Archived Render setup (not the deployment target)
 
-**No Render deployment was performed during integration: no Render API key was available. Local-only verification is not proof of a deployed service.**
+**The deployment target changed to `Dockerfile.devindemos`; do not create Render resources for this handoff.** No Render deployment was performed. The earlier Blueprint is retained below only as an alternative reference, not as evidence of deployment.
 
 1. In [Render](https://dashboard.render.com), create a **Blueprint** from this repository, `render.yaml`, branch `main`. Review cost before creation. It defines three Docker web services, managed PostgreSQL 16 and a private Datadog agent in Frankfurt.
 2. Supply `DD_API_KEY` for the agent when prompted. The Blueprint sets `DD_SITE=datadoghq.com`, `DD_ENV=demo`, service names and private agent routing. Application startup derives `DD_VERSION` from `RENDER_GIT_COMMIT`. APM has no public listener.
@@ -132,7 +168,8 @@ The Blueprint validates against Render's official JSON Schema. An API key alone 
 
 ## Tests and quality
 
-- `make test`: production UI build, **130 Vitest/Supertest tests**, **5 traffic fixture tests** and traffic typecheck, **145 JUnit tests** (including **40 PostgreSQL Testcontainers integration cases**, real Camunda and camunda-bpm-assert), **legacy build-only**.
+- `make test`: production UI build, **134 Vitest/Supertest tests**, **6 traffic fixture tests** and traffic typecheck, **145 JUnit tests** (including **40 PostgreSQL Testcontainers integration cases**, real Camunda and camunda-bpm-assert), **legacy build-only**.
+- Base-path tests cover prefixed HTML/assets/forms, health, redirects, upload JSON, cookie scope, sign-in/sign-out and traffic-driver redirects.
 - `IntegratedWorkflowIT`: real REST/domain + seed + BPMN delegates + PDF storage + response cancellation + repeated reset, with a failed-reset rollback regression across business and workflow tables.
 - `./scripts/test-seed.sh`: isolated disposable PostgreSQL database, migrations and repeated seed reset assertions.
 - `./scripts/test-java-logging.sh`: real encoder, correlation fields, HTTP timing and exception stack.

@@ -41,7 +41,9 @@ export class BrowserSession {
 
   // Follow only same-origin redirects; do not leak session cookies to another host.
   async request(path: string, init: RequestInit = {}): Promise<{ html: string; url: URL }> {
-    let url = new URL(path, this.baseUrl);
+    const basePath = new URL(this.baseUrl).pathname.replace(/\/$/, '');
+    let url = new URL(path.startsWith('/') && path !== basePath && !path.startsWith(basePath + '/')
+      ? basePath + path : path, this.baseUrl);
     const origin = new URL(this.baseUrl).origin;
     for (let hop = 0; hop < 10; hop++) {
       if (url.origin !== origin) throw new Error('Refused cross-origin redirect');
@@ -108,7 +110,7 @@ export async function makeClaim(baseUrl: string, iteration: number, signal?: Abo
   // Only the explicitly documented synthetic demo card is used; never print form bodies.
   const confirmation = await browser.form('/make-claim/payment', { cardNumber: '4242424242424242', cardholderName: 'Demo Citizen',
     expiryMonth: '12', expiryYear: String(new Date().getUTCFullYear() + 4), securityCode: '123' });
-  if (confirmation.url.pathname !== '/make-claim/confirmation') throw new Error('Claim did not reach confirmation');
+  if (confirmation.url.pathname !== new URL(baseUrl).pathname.replace(/\/$/, '') + '/make-claim/confirmation') throw new Error('Claim did not reach confirmation');
   const reference = confirmation.html.match(/000MC\d{3,}/)?.[0];
   const securityCode = confirmation.html.match(/data-security-code=["']([A-Z0-9]{8})["']/)?.[1];
   if (!reference || !securityCode) throw new Error('Claim confirmation is missing reference or data-security-code');
@@ -123,7 +125,7 @@ export async function respond(baseUrl: string, claim: { reference: string; secur
   if (type !== 'ADMIT_ALL') await browser.form('/respond/details', { reason: 'Synthetic demo: I disagree with the amount claimed because some agreed work was incomplete.', admittedAmount: '100.00' });
   if (type !== 'REJECT') await browser.form('/respond/payment', { paymentOption: 'IMMEDIATELY' });
   const result = await browser.form('/respond/check-answers', { statementOfTruth: 'true' });
-  if (result.url.pathname !== '/respond/confirmation' || !result.html.includes(claim.reference)) throw new Error('Response did not reach confirmation');
+  if (result.url.pathname !== new URL(baseUrl).pathname.replace(/\/$/, '') + '/respond/confirmation' || !result.html.includes(claim.reference)) throw new Error('Response did not reach confirmation');
 }
 
 export async function run(config: TrafficConfig, signal: AbortSignal) {
