@@ -1,0 +1,46 @@
+{% extends "caseworker/layout.njk" %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% block content %}
+<div class="staff-heading"><div><span class="govuk-caption-l">Civil money claims</span><h1 class="govuk-heading-xl">Manage cases</h1></div><span class="govuk-tag govuk-tag--grey">Caseworker</span></div>
+<p class="govuk-body">View and manage modern and legacy money claims in one place.</p>
+<section class="staff-filter" aria-labelledby="filters-heading">
+  <h2 class="govuk-heading-m" id="filters-heading">Filter cases</h2>
+  <form method="get" action="/caseworker">
+    <div class="staff-filter-fields">
+      {{ govukSelect({ id: "state", name: "state", label: { text: "Case state" }, items: stateItems, errorMessage: fieldErrors.state }) }}
+      {{ govukInput({ id: "from", name: "from", type: "date", value: filters.from, label: { text: "Created from" }, errorMessage: fieldErrors.from }) }}
+      {{ govukInput({ id: "to", name: "to", type: "date", value: filters.to, label: { text: "Created to" }, errorMessage: fieldErrors.to }) }}
+    </div>
+    <div class="govuk-button-group staff-filter-actions">{{ govukButton({ text: "Apply filters", classes: "govuk-button--secondary" }) }}<a class="govuk-link" href="/caseworker">Clear filters</a></div>
+  </form>
+</section>
+<section id="case-list" aria-labelledby="case-list-heading">
+  <h2 class="govuk-heading-m" id="case-list-heading">Case list{% if total is defined %} <span class="staff-count">({{ total }})</span>{% endif %}</h2>
+  {% if not errors.length %}
+  {% if claims.length %}
+  <p class="govuk-body-s">Showing {{ start }} to {{ end }} of {{ total }} cases, newest first.</p>
+  <div class="staff-table-scroll" tabindex="0" role="region" aria-label="Cases">
+  <table class="govuk-table staff-case-table">
+    <caption class="govuk-table__caption govuk-visually-hidden">Cases matching the selected filters</caption>
+    <thead class="govuk-table__head"><tr class="govuk-table__row">
+      <th scope="col" class="govuk-table__header">Case reference</th><th scope="col" class="govuk-table__header">Parties</th><th scope="col" class="govuk-table__header">State</th><th scope="col" class="govuk-table__header govuk-table__header--numeric">Total claim</th><th scope="col" class="govuk-table__header">Created</th>
+    </tr></thead>
+    <tbody class="govuk-table__body">{% for claim in claims %}<tr class="govuk-table__row">
+      <th scope="row" class="govuk-table__header"><a class="govuk-link govuk-link--no-visited-state" href="/caseworker/{{ claim.reference }}">{{ claim.reference }}</a><span class="staff-secondary">{{ "Legacy" if "000LC" in claim.reference else "Modern" }}</span></th>
+      <td class="govuk-table__cell">{{ claim.claimant.name or "Not provided" }}<span class="staff-secondary">v {{ claim.defendant.name or "Not provided" }}</span></td>
+      <td class="govuk-table__cell">{% set status = claim.state %}{% include "partials/status-tag.njk" %}</td>
+      <td class="govuk-table__cell govuk-table__cell--numeric">{{ claim.totalAmount | money }}</td>
+      <td class="govuk-table__cell">{{ claim.createdAt | date }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% if pages > 1 %}<nav class="staff-pagination govuk-body" aria-label="Pagination">
+    {% if previous %}<a class="govuk-link" rel="prev" href="{{ previous }}">Previous<span class="govuk-visually-hidden"> page</span></a>{% endif %}
+    <span>Page {{ pageNumber }} of {{ pages }}</span>
+    {% if next %}<a class="govuk-link" rel="next" href="{{ next }}">Next<span class="govuk-visually-hidden"> page</span></a>{% endif %}
+  </nav>{% endif %}
+  {% else %}<div class="staff-empty"><h3 class="govuk-heading-m">No cases found</h3><p class="govuk-body">Try changing or clearing your filters.</p><a class="govuk-link" href="/caseworker">Clear filters</a></div>{% endif %}
+  {% else %}<p class="govuk-body">Correct the filters above to view cases.</p>{% endif %}
+</section>
+{% endblock %}

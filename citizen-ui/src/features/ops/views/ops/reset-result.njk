@@ -1,0 +1,11 @@
+{% extends "layouts/base.njk" %}
+{% block content %}
+<h1 class="govuk-heading-l">Sorry, there is a problem with the service.</h1>
+<p class="govuk-body">Reference: {{ requestId }}</p>
+<h2 class="govuk-heading-m">Demo reset did not complete</h2>
+<p class="govuk-body">Do not continue the demo until both services have reset successfully.</p>
+<dl class="govuk-summary-list">{% for outcome in outcomes %}<div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">{{ outcome.label }}</dt><dd class="govuk-summary-list__value">{% if outcome.success %}Reset completed. {{ outcome.claims }} claims restored.{% else %}Reset could not be confirmed. Check service logs using the reference above.{% endif %}</dd></div>{% endfor %}</dl>
+<p class="govuk-body">A service may have reset even if its response was lost. Retrying safely restores the clean seed in both services.</p>
+<p class="govuk-body"><a class="govuk-link" href="/ops/reset">Try the reset again</a></p>
+<p class="govuk-body"><a class="govuk-link" href="/ops">Back to operations</a></p>
+{% endblock %}

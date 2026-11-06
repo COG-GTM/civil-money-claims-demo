@@ -1,0 +1,5 @@
+{% extends "layouts/base.njk" %}
+{% block beforeContent %}
+<link rel="stylesheet" href="/assets/features/caseworker/staff.css">
+{% if backLink %}<a class="govuk-back-link" href="{{ backLink }}">Back to case list</a>{% endif %}
+{% endblock %}

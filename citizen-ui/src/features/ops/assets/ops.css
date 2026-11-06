@@ -1,0 +1,15 @@
+/* Keep operational numbers readable without turning the staff page into a separate design system. */
+.ops-services { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 25px; margin: 30px 0 40px; }
+.ops-service { border: 1px solid #b1b4b6; border-top: 5px solid #1d70b8; padding: 25px; }
+.ops-service .govuk-heading-m { margin-bottom: 5px; }
+.ops-service-name { color: #505a5f; overflow-wrap: anywhere; }
+.ops-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin: 30px 0 20px; }
+.ops-metrics dt { margin-bottom: 5px; }
+.ops-metrics dd { margin: 0; }
+.ops-window { border-top: 1px solid #b1b4b6; padding-top: 15px; margin-bottom: 0; }
+.ops-errors { overflow-x: auto; }
+.ops-errors:focus { outline: 3px solid #ffdd00; }
+.ops-errors .govuk-table { font-size: 16px; }
+.ops-errors td { overflow-wrap: anywhere; min-width: 150px; }
+.ops-error-detail { display: block; font-size: 16px; color: #505a5f; margin-top: 5px; }
+@media (max-width: 640px) { .ops-services { grid-template-columns: 1fr; } }
