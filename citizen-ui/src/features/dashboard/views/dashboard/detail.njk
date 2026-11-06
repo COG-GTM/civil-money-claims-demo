@@ -1,0 +1,41 @@
+{% extends "layouts/base.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% block pageTitle %}Claim {{ claim.reference }}{% endblock %}
+{% block content %}
+<div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
+  <span class="govuk-caption-l">Claim {{ claim.reference }}</span>
+  <h1 class="govuk-heading-xl">Your claim against {{ claim.defendant.name }}</h1>
+  <p class="govuk-body">{% set status = claim.state %}{% include "partials/status-tag.njk" %}</p>
+  {% if claim.judgmentRequestedAt %}
+    <div class="govuk-inset-text">You requested judgment by default on {{ claim.judgmentRequestedAt | date }}. This is a request, not a court decision.</div>
+  {% elif eligible %}
+    <div class="govuk-inset-text">The response deadline has passed and the defendant has not responded. You can request judgment by default.</div>
+    {{ govukButton({text: "Request judgment by default", href: "/dashboard/" + claim.reference + "/default-judgment"}) }}
+  {% elif not claim.response and claim.responseDeadline and claim.state != "SETTLED" and claim.state != "TRANSFERRED" %}
+    <div class="govuk-inset-text">The defendant has until the end of {{ claim.responseDeadline | date }} to respond. You can only request judgment after that deadline has passed and if they have not responded.</div>
+  {% endif %}
+  {% include "respond/claim-summary.njk" %}
+  {% if claim.securityCode %}
+  <details class="govuk-details" data-module="govuk-details">
+    <summary class="govuk-details__summary"><span class="govuk-details__summary-text">Demo details for responding to this claim</span></summary>
+    <div class="govuk-details__text">To try the defendant journey, use claim reference <strong>{{ claim.reference }}</strong> and security code <strong id="demo-security-code">{{ claim.securityCode }}</strong> on the <a class="govuk-link" href="/respond">respond to a claim</a> page. These details are for synthetic demo claims only.</div>
+  </details>
+  {% endif %}
+  {% if claim.response %}
+  <h2 class="govuk-heading-l" id="response">Defendant’s response</h2>
+  <dl class="govuk-summary-list">
+    <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Response</dt><dd class="govuk-summary-list__value">{{ responseLabels[claim.response.type] }}</dd></div>
+    {% if claim.response.type != "REJECT" %}<div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Admitted amount</dt><dd class="govuk-summary-list__value">{{ claim.response.admittedAmount | money }}</dd></div>{% endif %}
+    {% if claim.response.reason %}<div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Explanation</dt><dd class="govuk-summary-list__value" style="white-space: pre-line">{{ claim.response.reason }}</dd></div>{% endif %}
+    {% if claim.response.paymentOption %}<div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Payment proposal</dt><dd class="govuk-summary-list__value">{{ paymentLabels[claim.response.paymentOption] }}{% if claim.response.paymentDate %}<br>{{ claim.response.paymentDate | date }}{% endif %}{% if claim.response.instalmentAmount %}<br>{{ claim.response.instalmentAmount | money }} each month{% endif %}</dd></div>{% endif %}
+  </dl>
+  {% endif %}
+  <h2 class="govuk-heading-l">Claim history</h2>
+  {% if events.length %}
+  <ol class="govuk-list">
+    {% for event in events %}<li class="govuk-!-margin-bottom-5"><h3 class="govuk-heading-s govuk-!-margin-bottom-1">{{ event.type | statusLabel }}</h3><p class="govuk-body govuk-!-margin-bottom-1">{{ event.description }}</p><p class="govuk-body-s">{{ event.createdAt | date }}</p></li>{% endfor %}
+  </ol>
+  {% else %}<p class="govuk-body">No events have been recorded yet.</p>{% endif %}
+  <p class="govuk-body"><a class="govuk-link" href="/dashboard">Back to your claims</a></p>
+</div></div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+{{ govukSummaryList({ rows: [
+  {key: {text: "Claimant"}, value: {text: claim.claimant.name} },
+  {key: {text: "Defendant"}, value: {text: claim.defendant.name} },
+  {key: {text: "Claim amount"}, value: {text: claim.principalAmount | money} },
+  {key: {text: "Interest"}, value: {text: claim.interestAmount | money} },
+  {key: {text: "Claim fee"}, value: {text: claim.fee | money} },
+  {key: {text: "Total claim"}, value: {text: claim.totalAmount | money} },
+  {key: {text: "Issued on"}, value: {text: claim.issuedAt | date} },
+  {key: {text: "Response deadline"}, value: {text: claim.responseDeadline | date} }
+] }) }}
+<h2 class="govuk-heading-m">Why the money is owed</h2>
+<p class="govuk-body" style="white-space: pre-line">{{ claim.reason or "No reason provided" }}</p>
+{% if claim.amountBreakdown.length %}
+<h2 class="govuk-heading-m">How the claim amount is made up</h2>
+<dl class="govuk-summary-list">
+{% for item in claim.amountBreakdown %}
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">{{ item.reason }}</dt><dd class="govuk-summary-list__value">{{ item.amount | money }}</dd></div>
+{% endfor %}
+</dl>
+{% endif %}
+{% if claim.timeline.length %}
+<h2 class="govuk-heading-m">Timeline of events</h2>
+<dl class="govuk-summary-list">
+{% for item in claim.timeline %}
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">{{ item.date | date }}</dt><dd class="govuk-summary-list__value">{{ item.description }}</dd></div>
+{% endfor %}
+</dl>
+{% endif %}

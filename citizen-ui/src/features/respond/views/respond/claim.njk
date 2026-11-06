@@ -1,0 +1,21 @@
+{% extends "layouts/base.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% block pageTitle %}Claim {{ claim.reference }}{% endblock %}
+{% block content %}
+<div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
+  <span class="govuk-caption-l">Claim {{ claim.reference }}</span>
+  <h1 class="govuk-heading-xl">The claim against you</h1>
+  {% set status = claim.state %}{% include "partials/status-tag.njk" %}
+  {% if canRespond %}
+    <div class="govuk-inset-text">Respond by <strong>{{ claim.responseDeadline | date }}</strong>. If you do not respond, the claimant may ask the court to order you to pay.</div>
+  {% endif %}
+  {% include "respond/claim-summary.njk" %}
+  {% if canRespond %}
+    {{ govukButton({text: "Respond to this claim", href: "/respond/response", isStartButton: true}) }}
+    <p class="govuk-body">You can admit all or part of the claim, or reject it. No payment will be taken by this demo.</p>
+  {% else %}
+    <div class="govuk-inset-text">{% if claim.response %}A response has already been submitted for this claim.{% elif claim.judgmentRequestedAt %}The claimant has requested judgment by default. You cannot submit a response through this demo.{% else %}This claim is not awaiting a response.{% endif %}</div>
+  {% endif %}
+  <p class="govuk-body"><a class="govuk-link" href="/respond">Find another claim</a></p>
+</div></div>
+{% endblock %}

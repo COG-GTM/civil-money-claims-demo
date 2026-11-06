@@ -1,0 +1,20 @@
+{% extends "layouts/base.njk" %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/textarea/macro.njk" import govukTextarea %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% block pageTitle %}{% if errors.length %}Error: {% endif %}{{ "Which part of the claim do you admit?" if answers.type == "ADMIT_PART" else "Why do you reject the claim?" }}{% endblock %}
+{% block content %}
+<div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
+  <span class="govuk-caption-l">Claim {{ claim.reference }}</span>
+  <h1 class="govuk-heading-xl">{{ "Which part of the claim do you admit?" if answers.type == "ADMIT_PART" else "Why do you reject the claim?" }}</h1>
+  <form method="post" action="/respond/details">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    {% if answers.type == "ADMIT_PART" %}
+      <p class="govuk-body">The total claim is {{ claim.totalAmount | money }}, including interest and the claim fee.</p>
+      {{ govukInput({id: "admittedAmount", name: "admittedAmount", label: {text: "How much do you admit you owe?", classes: "govuk-label--m"}, prefix: {text: "£"}, classes: "govuk-input--width-10", inputmode: "decimal", value: answers.admittedAmount, errorMessage: {text: fields.admittedAmount} if fields.admittedAmount else undefined}) }}
+    {% endif %}
+    {{ govukTextarea({id: "reason", name: "reason", value: answers.reason, rows: 8, label: {text: "Why do you disagree with " + ("the rest of the claim?" if answers.type == "ADMIT_PART" else "the claim?"), classes: "govuk-label--m"}, hint: {text: "Explain what happened in your own words. You can enter up to 5,000 characters. Only use synthetic details in this demo."}, errorMessage: {text: fields.reason} if fields.reason else undefined}) }}
+    {{ govukButton({text: "Continue"}) }}
+  </form>
+</div></div>
+{% endblock %}

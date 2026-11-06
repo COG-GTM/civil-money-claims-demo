@@ -1,0 +1,33 @@
+{% extends "layouts/base.njk" %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% block pageTitle %}{% if errors.length %}Error: {% endif %}How would you like to pay?{% endblock %}
+{% block content %}
+<div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
+  <span class="govuk-caption-l">Claim {{ claim.reference }}</span>
+  <h1 class="govuk-heading-xl">How would you like to pay?</h1>
+  <p class="govuk-body">You admit that you owe <strong>{{ (claim.totalAmount if answers.type == "ADMIT_ALL" else answers.admittedAmount) | money }}</strong>. Tell the claimant how you propose to pay.</p>
+  <p class="govuk-body">No payment will be taken. This proposal does not mean the claim has been paid or settled.</p>
+  <form method="post" action="/respond/payment">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    {% set dateFields %}
+      {{ govukDateInput({id: "paymentDate", fieldset: {legend: {text: "When will you pay?"} }, hint: {text: "For example, 27 3 2027"}, errorMessage: {text: fields.paymentDay} if fields.paymentDay else undefined, items: [
+        {id: "paymentDay", name: "paymentDay", label: "Day", classes: "govuk-input--width-2", value: answers.paymentDay},
+        {id: "paymentMonth", name: "paymentMonth", label: "Month", classes: "govuk-input--width-2", value: answers.paymentMonth},
+        {id: "paymentYear", name: "paymentYear", label: "Year", classes: "govuk-input--width-4", value: answers.paymentYear}
+      ]}) }}
+    {% endset %}
+    {% set instalmentFields %}
+      {{ govukInput({id: "instalmentAmount", name: "instalmentAmount", label: {text: "How much can you pay each month?"}, classes: "govuk-input--width-10", prefix: {text: "£"}, inputmode: "decimal", value: answers.instalmentAmount, errorMessage: {text: fields.instalmentAmount} if fields.instalmentAmount else undefined}) }}
+    {% endset %}
+    {{ govukRadios({name: "paymentOption", idPrefix: "paymentOption", value: answers.paymentOption, fieldset: {legend: {text: "Choose a payment option", classes: "govuk-fieldset__legend--m"} }, errorMessage: {text: fields.paymentOption} if fields.paymentOption else undefined, items: [
+      {value: "IMMEDIATELY", text: "Immediately"},
+      {value: "BY_DATE", text: "By a set date", conditional: {html: dateFields} },
+      {value: "INSTALMENTS", text: "In monthly instalments", conditional: {html: instalmentFields} }
+    ]}) }}
+    {{ govukButton({text: "Continue"}) }}
+  </form>
+</div></div>
+{% endblock %}
