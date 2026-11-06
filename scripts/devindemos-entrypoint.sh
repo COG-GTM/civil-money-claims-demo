@@ -76,12 +76,25 @@ http {
     default \$http_x_forwarded_proto;
     "" \$scheme;
   }
+  map \$forwarded_proto \$default_port {
+    https 443;
+    default 80;
+  }
+  map \$http_host \$host_port {
+    "~:(?<port_from_host>[0-9]+)$" \$port_from_host;
+    default \$default_port;
+  }
+  map \$http_x_forwarded_port \$forwarded_port {
+    "~^[0-9]+$" \$http_x_forwarded_port;
+    default \$host_port;
+  }
   server {
     listen $PORT;
     proxy_http_version 1.1;
     proxy_set_header Host \$http_host;
     proxy_set_header X-Forwarded-Host \$http_host;
     proxy_set_header X-Forwarded-Proto \$forwarded_proto;
+    proxy_set_header X-Forwarded-Port \$forwarded_port;
     proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
     proxy_read_timeout 120s;
     location $BASE_PATH/legacy/ { proxy_pass http://127.0.0.1:8081; }

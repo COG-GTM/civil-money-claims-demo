@@ -68,6 +68,8 @@ jobs:
           curl --fail http://localhost:3000/f2ec3d90/legacy/health
           curl --fail http://localhost:3000/f2ec3d90/api/claims/000MC001
           curl --fail http://localhost:3000/f2ec3d90/legacy/api/claims/000LC001
+          curl -sI http://localhost:3000/f2ec3d90/camunda | grep -i '^Location: http://localhost:3000/f2ec3d90/camunda/'
+          curl -sI -H 'Host: demo.example.test' -H 'X-Forwarded-Proto: https' http://localhost:3000/f2ec3d90/camunda | grep -i '^Location: https://demo.example.test/f2ec3d90/camunda/'
           TRAFFIC_BASE_URL=http://localhost:3000/f2ec3d90 TRAFFIC_ITERATIONS=3 TRAFFIC_RATE_PER_MINUTE=600 node scripts/traffic.ts
       - if: failure()
         run: docker logs cmc-demo || true
