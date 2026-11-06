@@ -1,5 +1,8 @@
 server:
   port: ${PORT:8080}
+  tomcat:
+    # Drain a bounded rejected upload so clients receive the JSON 413 response.
+    max-swallow-size: 12MB
 spring:
   application:
     name: civil-case-api
