@@ -1,0 +1,34 @@
+{% extends "layouts/base.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
+{% block beforeContent %}<link rel="stylesheet" href="/assets/features/ops/ops.css">{% endblock %}
+{% block content %}
+{% if reset %}{{ govukNotificationBanner({ type: "success", titleText: "Success", text: "Demo data reset. " + reset.claims + " claims restored across both services." }) }}{% endif %}
+<span class="govuk-caption-l">HMCTS demo</span>
+<h1 class="govuk-heading-xl">Service operations</h1>
+<p class="govuk-body-l">Request and error activity across the two claims APIs.</p>
+<p class="govuk-body-s">Updated {{ updatedAt }} (UK time). <a class="govuk-link" href="/ops">Refresh metrics</a></p>
+<div class="ops-services">{% for metric in metrics %}
+  <section class="ops-service" aria-labelledby="service-{{ loop.index }}">
+    <h2 class="govuk-heading-m" id="service-{{ loop.index }}">{{ metric.label }}</h2>
+    <p class="govuk-body-s ops-service-name">{{ metric.service }}</p>
+    <dl class="ops-metrics">
+      <div><dt class="govuk-body-s">Request rate</dt><dd class="govuk-heading-l">{{ metric.requestRateLabel }} <span class="govuk-body-s">req/s</span></dd></div>
+      <div><dt class="govuk-body-s">Error rate</dt><dd class="govuk-heading-l">{{ metric.errorRateLabel }}<span class="govuk-body">%</span></dd></div>
+    </dl>
+    {% if metric.windowSeconds is defined %}<p class="govuk-body-s ops-window">In the last {{ metric.windowSeconds }} seconds{% if metric.requestCount is defined %}: {{ metric.requestCount }} requests{% endif %}{% if metric.errorCount is defined %}, {{ metric.errorCount }} errors{% endif %}.</p>{% else %}<p class="govuk-body-s ops-window">Rates reported by this service.</p>{% endif %}
+  </section>
+{% endfor %}</div>
+<h2 class="govuk-heading-l">Latest errors</h2>
+{% if latestErrors.length %}
+<p class="govuk-body">The 20 most recent errors reported by the APIs, newest first. Use the request reference to find the corresponding logs and trace.</p>
+<div class="ops-errors" tabindex="0" role="region" aria-label="Latest API errors"><table class="govuk-table">
+  <thead><tr class="govuk-table__row"><th class="govuk-table__header" scope="col">Time and service</th><th class="govuk-table__header" scope="col">Error</th><th class="govuk-table__header" scope="col">Request reference</th></tr></thead><tbody>
+  {% for error in latestErrors %}<tr class="govuk-table__row"><td class="govuk-table__cell">{{ error.dateLabel }}<span class="ops-error-detail">{{ error.service }}</span></td><td class="govuk-table__cell">{{ error.message }}{% if error.method or error.path %}<span class="ops-error-detail">{{ error.method }} {{ error.path }}</span>{% endif %}{% if error.status %}<span class="ops-error-detail">HTTP {{ error.status }}</span>{% endif %}</td><td class="govuk-table__cell"><code>{{ error.requestId }}</code></td></tr>{% endfor %}
+  </tbody></table></div>
+{% else %}<div class="govuk-inset-text">No errors reported in the current service windows.</div>{% endif %}
+<hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
+<h2 class="govuk-heading-l">Demo data</h2>
+<p class="govuk-body">Restore the clean synthetic seed in both services. This removes changes made during the demo, including new claims, responses, case notes and uploaded evidence.</p>
+{% if resetEnabled %}{{ govukButton({ text: "Reset demo data", href: "/ops/reset", classes: "govuk-button--warning" }) }}{% else %}<div class="govuk-inset-text">Demo reset is disabled. An operator must enable it and configure the reset token on the UI and both APIs.</div>{% endif %}
+{% endblock %}

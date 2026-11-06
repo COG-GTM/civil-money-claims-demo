@@ -1,0 +1,44 @@
+/* Feature-scoped, responsive case-management chrome; shared GOV.UK typography remains unchanged. */
+.staff-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.staff-heading .govuk-heading-xl { margin-bottom: 20px; }
+.staff-heading > .govuk-tag { margin-top: 8px; }
+.staff-filter { background: #f3f2f1; border: 1px solid #b1b4b6; padding: 20px; margin: 30px 0; }
+.staff-filter-fields { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 1fr)); gap: 20px; }
+.staff-filter-fields .govuk-select, .staff-filter-fields .govuk-input { width: 100%; min-width: 0; }
+.staff-filter-actions { margin-bottom: 0; }
+.staff-filter-actions .govuk-button { margin-bottom: 0; }
+.staff-count, .staff-secondary { color: #505a5f; }
+.staff-secondary { display: block; font-weight: normal; font-size: 16px; margin-top: 5px; }
+.staff-table-scroll { overflow-x: auto; }
+.staff-table-scroll:focus { outline: 3px solid #ffdd00; }
+.staff-case-table { font-size: 16px; }
+.staff-case-table .govuk-tag { font-size: 16px; max-width: 180px; }
+.staff-case-table th:first-child { min-width: 100px; }
+.staff-case-table td:last-child { min-width: 108px; }
+.staff-pagination { display: flex; gap: 25px; align-items: center; margin-top: 25px; }
+.staff-empty { padding: 25px; border-left: 5px solid #b1b4b6; background: #f3f2f1; margin: 20px 0; }
+.staff-case-heading { padding: 0 0 25px; }
+.staff-case-heading .govuk-heading-l { margin-bottom: 15px; }
+.staff-versus { color: #505a5f; padding: 0 8px; }
+.staff-tabs ul { display: flex; list-style: none; margin: 0; padding: 0; border-bottom: 1px solid #b1b4b6; gap: 5px; }
+.staff-tabs li { margin: 0; }
+.staff-tabs a { display: block; background: #f3f2f1; padding: 15px 20px; font: 19px Arial, Helvetica, sans-serif; border-bottom: 4px solid transparent; }
+.staff-tabs a.staff-tab-current { color: #0b0c0c; border-bottom-color: #1d70b8; background: #fff; font-weight: bold; text-decoration: none; }
+.staff-tabs a:focus { background: #ffdd00; }
+.staff-tab-content { padding-top: 30px; overflow-wrap: anywhere; }
+.staff-preserve-lines { white-space: pre-wrap; overflow-wrap: anywhere; }
+.staff-timeline { border-left: 5px solid #1d70b8; padding: 0 0 0 25px; margin: 25px 0 35px 5px; list-style: none; }
+.staff-timeline li { position: relative; padding-bottom: 15px; }
+.staff-timeline li::before { content: ""; position: absolute; left: -25px; top: 10px; width: 15px; border-top: 5px solid #1d70b8; }
+.staff-timeline .govuk-heading-s, .staff-note .govuk-heading-s { margin-bottom: 5px; }
+.staff-note { border: 1px solid #b1b4b6; padding: 20px; margin-bottom: 20px; }
+.staff-note .govuk-body:last-child { margin-bottom: 0; }
+@media (max-width: 640px) {
+  .staff-heading { display: block; }
+  .staff-filter-fields { grid-template-columns: 1fr; gap: 0; }
+  .staff-filter-actions { align-items: flex-start; }
+  .staff-filter-actions .govuk-button { margin-bottom: 15px; }
+  .staff-tabs ul { flex-wrap: wrap; gap: 3px; }
+  .staff-tabs a { padding: 12px; font-size: 16px; }
+  .staff-pagination { gap: 15px; flex-wrap: wrap; }
+}

@@ -1,0 +1,19 @@
+{% extends "layouts/base.njk" %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% block content %}
+<div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
+  <h1 class="govuk-heading-xl">Reset demo data</h1>
+  {% if resetEnabled %}
+  <p class="govuk-body-l">This will replace all claims in both services with the clean demo seed.</p>
+  <div class="govuk-warning-text"><span class="govuk-warning-text__icon" aria-hidden="true">!</span><strong class="govuk-warning-text__text"><span class="govuk-visually-hidden">Warning</span>New claims, responses, notes and uploaded documents will be removed. This cannot be undone.</strong></div>
+  <p class="govuk-body">Stop any demo traffic before continuing. Other signed-in users should start their journey again after the reset. Each service resets separately; if either fails, you will see which one needs attention.</p>
+  <form method="post" action="/ops/reset">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    {{ govukCheckboxes({ name: "confirm", idPrefix: "confirm", errorMessage: { text: confirmError } if confirmError else null,
+      items: [{ value: "yes", text: "I understand that all demo claims will be replaced." }] }) }}
+    <div class="govuk-button-group">{{ govukButton({ text: "Reset demo data", classes: "govuk-button--warning", preventDoubleClick: true }) }}<a class="govuk-link" href="/ops">Cancel</a></div>
+  </form>
+  {% else %}<p class="govuk-body">Demo reset is disabled. An operator must enable it and configure the reset token on the UI and both APIs.</p><a class="govuk-link" href="/ops">Back to operations</a>{% endif %}
+</div></div>
+{% endblock %}

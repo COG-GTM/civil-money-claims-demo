@@ -1,0 +1,23 @@
+{% extends "layouts/base.njk" %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% block content %}
+<div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
+  <span class="govuk-caption-l">Make a money claim</span>
+  <h1 class="govuk-heading-xl">Sign in to the demo</h1>
+  <p class="govuk-body-l">Choose a role to explore the service.</p>
+  <div class="govuk-inset-text">This is a demonstration. No password is needed. Use synthetic information only. You cannot submit a real claim or make a payment.</div>
+  <form method="post" action="/sign-in">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    {{ govukRadios({ name: "role", idPrefix: "role",
+      fieldset: { legend: { text: "How do you want to use the demo?", classes: "govuk-fieldset__legend--m" } },
+      errorMessage: { text: roleError } if roleError else null,
+      items: [
+        { value: "claimant", text: "Claimant", hint: { text: "Make a claim and view your existing claims." } },
+        { value: "defendant", text: "Defendant", hint: { text: "Respond to a claim using its reference and security code." } },
+        { value: "caseworker", text: "Caseworker", hint: { text: "Manage cases, add case notes and view service operations." } }
+      ] }) }}
+    {{ govukButton({ text: "Continue" }) }}
+  </form>
+</div></div>
+{% endblock %}

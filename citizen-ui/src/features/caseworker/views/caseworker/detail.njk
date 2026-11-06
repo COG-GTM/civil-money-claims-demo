@@ -1,0 +1,85 @@
+{% extends "caseworker/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/textarea/macro.njk" import govukTextarea %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
+{% block content %}
+{% if noteSaved %}{{ govukNotificationBanner({ type: "success", titleText: "Success", text: "Case note added." }) }}{% endif %}
+<div class="staff-case-heading">
+  <span class="govuk-caption-l">Civil money claims · {{ "Legacy case" if legacy else "Modern case" }}</span>
+  <h1 class="govuk-heading-l">Case {{ reference }}</h1>
+  <p class="govuk-body-l">{{ claim.claimant.name or "Claimant not provided" }} <span class="staff-versus">v</span> {{ claim.defendant.name or "Defendant not provided" }}</p>
+  {% set status = claim.state %}{% include "partials/status-tag.njk" %}
+</div>
+<nav aria-label="Case sections" class="staff-tabs"><ul>{% for item in tabLinks %}<li><a href="{{ item.href }}" class="govuk-link govuk-link--no-visited-state{% if item.name == tab %} staff-tab-current{% endif %}"{% if item.name == tab %} aria-current="page"{% endif %}>{{ item.label }}</a></li>{% endfor %}</ul></nav>
+<section class="staff-tab-content" aria-labelledby="tab-heading">
+  {% if tab == "summary" %}
+    <h2 class="govuk-heading-l" id="tab-heading">Summary</h2>
+    <dl class="govuk-summary-list">
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Case reference</dt><dd class="govuk-summary-list__value">{{ reference }}</dd></div>
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Case state</dt><dd class="govuk-summary-list__value">{{ claim.state | statusLabel }}</dd></div>
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Total claim</dt><dd class="govuk-summary-list__value">{{ claim.totalAmount | money }} (including interest and fee)</dd></div>
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Created</dt><dd class="govuk-summary-list__value">{{ claim.createdAt | date }}</dd></div>
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Issued</dt><dd class="govuk-summary-list__value">{{ claim.issuedAt | date if claim.issuedAt else "Not yet issued" }}</dd></div>
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Date of service</dt><dd class="govuk-summary-list__value">{{ claim.serviceDate | date if claim.serviceDate else "Not yet served" }}</dd></div>
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Response deadline</dt><dd class="govuk-summary-list__value">{{ claim.responseDeadline | date if claim.responseDeadline else "Not set" }}</dd></div>
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Acknowledged</dt><dd class="govuk-summary-list__value">{{ "Yes" if claim.acknowledged else "No" }}</dd></div>
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Default judgment requested</dt><dd class="govuk-summary-list__value">{{ claim.judgmentRequestedAt | date if claim.judgmentRequestedAt else "No" }}</dd></div>
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Case service</dt><dd class="govuk-summary-list__value">{{ "Legacy claim store" if legacy else "Civil case API" }}</dd></div>
+    </dl>
+    <p class="govuk-body"><a class="govuk-link" href="/caseworker/{{ reference }}/history#add-note">Add a case note</a></p>
+  {% elif tab == "parties" %}
+    <h2 class="govuk-heading-l" id="tab-heading">Parties</h2>
+    {% for partyType, party in { "Claimant": claim.claimant, "Defendant": claim.defendant } %}
+    <section class="govuk-summary-card"><div class="govuk-summary-card__title-wrapper"><h3 class="govuk-summary-card__title">{{ partyType }}</h3></div><div class="govuk-summary-card__content"><dl class="govuk-summary-list">
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Name</dt><dd class="govuk-summary-list__value">{{ party.name or "Not provided" }}</dd></div>
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Type</dt><dd class="govuk-summary-list__value">{{ party.type | statusLabel if party.type else "Not provided" }}</dd></div>
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Address</dt><dd class="govuk-summary-list__value">{% if party.address %}{{ party.address.line1 }}<br>{% if party.address.line2 %}{{ party.address.line2 }}<br>{% endif %}{{ party.address.city }}<br>{{ party.address.postcode }}{% if party.address.country %}<br>{{ party.address.country }}{% endif %}{% else %}Not provided{% endif %}</dd></div>
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Email</dt><dd class="govuk-summary-list__value">{{ party.email or "Not provided" }}</dd></div>
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Telephone</dt><dd class="govuk-summary-list__value">{{ party.phone or "Not provided" }}</dd></div>
+    </dl></div></section>
+    {% endfor %}
+  {% elif tab == "claim" %}
+    <h2 class="govuk-heading-l" id="tab-heading">Claim</h2>
+    <h3 class="govuk-heading-m">Amount claimed</h3>
+    <table class="govuk-table"><caption class="govuk-visually-hidden">Claim amount breakdown</caption><thead><tr class="govuk-table__row"><th scope="col" class="govuk-table__header">Description</th><th scope="col" class="govuk-table__header govuk-table__header--numeric">Amount</th></tr></thead><tbody>
+      {% for item in claim.amountBreakdown %}<tr class="govuk-table__row"><th scope="row" class="govuk-table__header">{{ item.reason }}</th><td class="govuk-table__cell govuk-table__cell--numeric">{{ item.amount | money }}</td></tr>{% endfor %}
+      <tr class="govuk-table__row"><th scope="row" class="govuk-table__header">Principal amount</th><td class="govuk-table__cell govuk-table__cell--numeric">{{ claim.principalAmount | money }}</td></tr>
+      <tr class="govuk-table__row"><th scope="row" class="govuk-table__header">Interest</th><td class="govuk-table__cell govuk-table__cell--numeric">{{ claim.interestAmount | money }}</td></tr>
+      <tr class="govuk-table__row"><th scope="row" class="govuk-table__header">Claim fee</th><td class="govuk-table__cell govuk-table__cell--numeric">{{ claim.fee | money }}</td></tr>
+      <tr class="govuk-table__row"><th scope="row" class="govuk-table__header">Total claim</th><td class="govuk-table__cell govuk-table__cell--numeric"><strong>{{ claim.totalAmount | money }}</strong></td></tr>
+    </tbody></table>
+    {% if claim.interest.claimed %}<p class="govuk-body">Statutory interest: {{ claim.interest.rate or 8 }}% a year, from {{ claim.interest.startDate | date }}. Daily rate: {{ claim.dailyInterest | money }}.</p>{% else %}<p class="govuk-body">Interest is not claimed.</p>{% endif %}
+    <h3 class="govuk-heading-m">Reason for the claim</h3><p class="govuk-body staff-preserve-lines">{{ claim.reason or "Not provided" }}</p>
+    <h3 class="govuk-heading-m">Timeline</h3>
+    {% if claim.timeline.length %}<dl class="govuk-summary-list">{% for entry in claim.timeline %}<div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">{{ entry.date | date }}</dt><dd class="govuk-summary-list__value staff-preserve-lines">{{ entry.description }}</dd></div>{% endfor %}</dl>{% else %}<p class="govuk-body">No timeline has been provided.</p>{% endif %}
+    <h3 class="govuk-heading-m">Defendant response</h3>
+    {% if claim.response %}<dl class="govuk-summary-list">
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Response</dt><dd class="govuk-summary-list__value">{% if claim.response.type == "ADMIT_ALL" %}Admits the whole claim{% elif claim.response.type == "ADMIT_PART" %}Admits part of the claim{% else %}Rejects the claim{% endif %}</dd></div>
+      {% if claim.response.admittedAmount is defined %}<div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Admitted amount</dt><dd class="govuk-summary-list__value">{{ claim.response.admittedAmount | money }}</dd></div>{% endif %}
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Reason</dt><dd class="govuk-summary-list__value staff-preserve-lines">{{ claim.response.reason or "Not provided" }}</dd></div>
+      {% if claim.response.paymentOption %}<div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Proposed payment</dt><dd class="govuk-summary-list__value">{{ claim.response.paymentOption | statusLabel }}{% if claim.response.paymentDate %} — {{ claim.response.paymentDate | date }}{% endif %}{% if claim.response.instalmentAmount %} — {{ claim.response.instalmentAmount | money }} per instalment{% endif %}</dd></div>{% endif %}
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Submitted</dt><dd class="govuk-summary-list__value">{{ claim.response.submittedAt | date }}</dd></div>
+    </dl>{% else %}<p class="govuk-body">No response has been submitted.</p>{% endif %}
+  {% elif tab == "documents" %}
+    <h2 class="govuk-heading-l" id="tab-heading">Documents</h2>
+    <p class="govuk-body">Evidence and generated claim forms for this case.</p>
+    {% if documents.length %}<div class="staff-table-scroll" tabindex="0" role="region" aria-label="Case documents"><table class="govuk-table"><thead><tr class="govuk-table__row"><th scope="col" class="govuk-table__header">Document</th><th scope="col" class="govuk-table__header">Size</th><th scope="col" class="govuk-table__header">Scan status</th><th scope="col" class="govuk-table__header">Added</th></tr></thead><tbody>
+    {% for document in documents %}<tr class="govuk-table__row"><th scope="row" class="govuk-table__header">{% if document.scanStatus == "CLEAN" %}<a class="govuk-link" href="/caseworker/{{ reference }}/documents/{{ document.id }}">{{ document.fileName }}<span class="govuk-visually-hidden"> (download)</span></a>{% else %}{{ document.fileName }}{% endif %}</th><td class="govuk-table__cell">{{ document.sizeLabel }}</td><td class="govuk-table__cell">{{ document.scanStatus | statusLabel }}</td><td class="govuk-table__cell">{{ document.createdAt | date }}</td></tr>{% endfor %}
+    </tbody></table></div><p class="govuk-body-s">Virus scanning is simulated for this demo. Only documents marked clean can be downloaded from this list.</p>{% else %}<div class="staff-empty"><p class="govuk-body">No documents have been added to this case.</p></div>{% endif %}
+  {% elif tab == "history" %}
+    <h2 class="govuk-heading-l" id="tab-heading">History</h2>
+    <h3 class="govuk-heading-m">Case events</h3>
+    {% if events.length %}<ol class="staff-timeline">{% for event in events %}<li><h4 class="govuk-heading-s">{{ event.type | statusLabel }}</h4><p class="govuk-body-s staff-secondary">{{ event.dateLabel }}{% if event.actor %} · {{ event.actor }}{% endif %}</p><p class="govuk-body staff-preserve-lines">{{ event.description }}</p></li>{% endfor %}</ol>{% else %}<p class="govuk-body">No events have been recorded.</p>{% endif %}
+    <h3 class="govuk-heading-m">Case notes</h3>
+    {% for note in notes %}<article class="staff-note"><h4 class="govuk-heading-s">{{ note.author }}</h4><p class="govuk-body-s staff-secondary">{{ note.dateLabel }}</p><p class="govuk-body staff-preserve-lines">{{ note.text }}</p></article>{% else %}<p class="govuk-body">No case notes have been added.</p>{% endfor %}
+    <form method="post" action="/caseworker/{{ reference }}/notes" id="add-note">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+      {{ govukTextarea({ name: "text", id: "note", value: note, rows: 5, maxlength: 10000,
+        label: { text: "Add a case note", classes: "govuk-label--m" },
+        hint: { text: "Caseworker notes are saved to this case. Use synthetic information only. Maximum 10,000 characters." },
+        errorMessage: { text: noteError } if noteError else null }) }}
+      {{ govukButton({ text: "Add case note", preventDoubleClick: true }) }}
+    </form>
+  {% endif %}
+</section>
+{% endblock %}
