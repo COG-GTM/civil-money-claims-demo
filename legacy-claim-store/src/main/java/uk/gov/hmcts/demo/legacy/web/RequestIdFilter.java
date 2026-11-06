@@ -15,6 +15,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class RequestIdFilter extends OncePerRequestFilter {
     private static final Logger LOG = LoggerFactory.getLogger(RequestIdFilter.class);
+    private final LegacyMetrics metrics;
+
+    public RequestIdFilter(LegacyMetrics metrics) {
+        this.metrics = metrics;
+    }
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
@@ -27,7 +32,8 @@ public class RequestIdFilter extends OncePerRequestFilter {
         try {
             chain.doFilter(request, response);
         } finally {
-            LOG.atInfo().addKeyValue("method", request.getMethod()).addKeyValue("path", request.getRequestURI())
+            metrics.record(requestId, request.getMethod(), request.getRequestURI(), response.getStatus());
+            LOG.atInfo().addKeyValue("method", request.getMethod()).addKeyValue("path", LegacyMetrics.safePath(request.getRequestURI()))
                 .addKeyValue("status", response.getStatus()).addKeyValue("duration_ms", (System.nanoTime() - start) / 1_000_000)
                 .log("HTTP request");
             MDC.remove("request_id");
