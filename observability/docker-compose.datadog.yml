@@ -1,0 +1,56 @@
+# Merge with the root Compose file; scripts/up-observability.sh sets the git SHA.
+x-tracing: &tracing
+  DD_TRACE_ENABLED: "true"
+  DD_AGENT_HOST: datadog-agent
+  DD_TRACE_AGENT_URL: http://datadog-agent:8126
+  DD_ENV: ${DD_ENV:-demo}
+  DD_VERSION: ${DD_VERSION:?Set DD_VERSION to the git SHA}
+  DD_LOGS_INJECTION: "true"
+  DD_TRACE_HEADER_TAGS: x-request-id:request_id
+services:
+  datadog-agent:
+    image: gcr.io/datadoghq/agent:7.73.0
+    environment:
+      DD_API_KEY: ${DD_API_KEY:?Set DD_API_KEY before enabling observability}
+      DD_SITE: ${DD_SITE:-datadoghq.com}
+      DD_ENV: ${DD_ENV:-demo}
+      DD_HOSTNAME: civil-money-claims-demo
+      DD_APM_ENABLED: "true"
+      DD_APM_NON_LOCAL_TRAFFIC: "true"
+      DD_LOGS_ENABLED: "true"
+      DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL: "false"
+      DD_PROCESS_CONFIG_PROCESS_COLLECTION_ENABLED: "false"
+      DD_CONTAINER_EXCLUDE: "name:datadog-agent"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+    restart: unless-stopped
+  civil-case-api:
+    environment: *tracing
+    labels:
+      com.datadoghq.ad.logs: '[{"source":"java","service":"civil-case-api"}]'
+      com.datadoghq.tags.service: civil-case-api
+      com.datadoghq.tags.env: ${DD_ENV:-demo}
+      com.datadoghq.tags.version: ${DD_VERSION}
+    depends_on:
+      datadog-agent: { condition: service_started }
+  legacy-claim-store:
+    environment: *tracing
+    labels:
+      com.datadoghq.ad.logs: '[{"source":"java","service":"legacy-claim-store"}]'
+      com.datadoghq.tags.service: legacy-claim-store
+      com.datadoghq.tags.env: ${DD_ENV:-demo}
+      com.datadoghq.tags.version: ${DD_VERSION}
+    depends_on:
+      datadog-agent: { condition: service_started }
+  citizen-ui:
+    environment: *tracing
+    labels:
+      com.datadoghq.ad.logs: '[{"source":"nodejs","service":"civil-citizen-ui"}]'
+      com.datadoghq.tags.service: civil-citizen-ui
+      com.datadoghq.tags.env: ${DD_ENV:-demo}
+      com.datadoghq.tags.version: ${DD_VERSION}
+    depends_on:
+      datadog-agent: { condition: service_started }

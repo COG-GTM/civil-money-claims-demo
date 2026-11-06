@@ -1,10 +1,18 @@
 <configuration>
   <springProperty scope="context" name="service" source="spring.application.name"/>
   <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-      <includeContext>false</includeContext>
-      <fieldNames><timestamp>timestamp</timestamp></fieldNames>
-      <customFields>{"service":"${service}","env":"${DD_ENV:-demo}","version":"${DD_VERSION:-local}"}</customFields>
+    <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+      <providers>
+        <timestamp><fieldName>timestamp</fieldName><timeZone>UTC</timeZone></timestamp>
+        <logLevel><fieldName>level</fieldName></logLevel>
+        <message/>
+        <pattern><pattern>{"service":"${DD_SERVICE:-${service}}","env":"${DD_ENV:-demo}","version":"${DD_VERSION:-local}","request_id":"%mdc{request_id}","dd.trace_id":"%mdc{dd.trace_id:-0}","dd.span_id":"%mdc{dd.span_id:-0}"}</pattern></pattern>
+        <keyValuePairs/>
+        <loggerName/>
+        <throwableClassName><fieldName>error.kind</fieldName></throwableClassName>
+        <throwableMessage><fieldName>error.message</fieldName></throwableMessage>
+        <stackTrace><fieldName>error.stack</fieldName></stackTrace>
+      </providers>
     </encoder>
   </appender>
   <root level="INFO"><appender-ref ref="JSON"/></root>
