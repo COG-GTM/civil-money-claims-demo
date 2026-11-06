@@ -2,12 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { BrowserSession, configuration, csrfToken, makeClaim, respond } from './traffic.ts';
+import { BrowserSession, configuration, csrfToken, makeClaim, respond, run } from './traffic.ts';
 
 test('configuration rejects invalid rates and token-bearing base URLs', () => {
   assert.equal(configuration({}).rate, 6);
   for (const rate of ['0', '-1', 'NaN', '1000']) assert.throws(() => configuration({ TRAFFIC_RATE_PER_MINUTE: rate }));
   assert.throws(() => configuration({ TRAFFIC_BASE_URL: 'https://user:secret@example.test' }));
+  assert.throws(() => configuration({ TRAFFIC_BASE_URL: 'https://example.test/?token=secret' }));
   assert.throws(() => configuration({ TRAFFIC_CONCURRENCY: '1.5' }));
 });
 test('CSRF token parsing supports meta/hidden attributes in either order', () => {
@@ -68,5 +69,17 @@ test('HTTP errors and cross-origin redirects are not silently successful', async
   try {
     await assert.rejects(browser.request('/'), /HTTP 500; request_id=failure123/);
     await assert.rejects(browser.request('/redirect'), /cross-origin/);
+  } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
+});
+
+test('a short duration does not wait for a long rate interval', async () => {
+  const server = createServer((_req, res) => { res.writeHead(503); res.end(); });
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const start = performance.now();
+    const status = await run({ baseUrl: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, rate: 0.1,
+      concurrency: 1, iterations: 0, durationSeconds: 0.02 }, AbortSignal.timeout(1000));
+    assert.equal(status, 1);
+    assert.ok(performance.now() - start < 900, 'Duration should bound scheduling, not the 600-second interval');
   } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
 });

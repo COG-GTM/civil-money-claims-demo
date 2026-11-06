@@ -9,7 +9,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 export type TrafficConfig = { baseUrl: string; rate: number; concurrency: number; iterations: number; durationSeconds: number };
 export function configuration(env: NodeJS.ProcessEnv = process.env): TrafficConfig {
   const baseUrl = new URL(env.TRAFFIC_BASE_URL || 'http://localhost:3000');
-  if (!['http:', 'https:'].includes(baseUrl.protocol) || baseUrl.username || baseUrl.password) throw new Error('TRAFFIC_BASE_URL must be an HTTP(S) URL without credentials');
+  if (!['http:', 'https:'].includes(baseUrl.protocol) || baseUrl.username || baseUrl.password || baseUrl.search || baseUrl.hash) throw new Error('TRAFFIC_BASE_URL must be an HTTP(S) URL without credentials, query or fragment');
   function number(name: string, fallback: number, min: number, max: number, integer = false) {
     const value = Number(env[name] ?? fallback);
     if (!Number.isFinite(value) || value < min || value > max || (integer && !Number.isInteger(value))) throw new Error(`Invalid ${name}: expected ${min}..${max}`);
@@ -151,7 +151,8 @@ export async function run(config: TrafficConfig, signal: AbortSignal) {
       void job.finally(() => active.delete(job));
     }
     if (config.iterations && scheduled >= config.iterations) break;
-    await delay(60000 / config.rate, undefined, { signal }).catch(() => {});
+    const remaining = config.durationSeconds ? Math.max(0, config.durationSeconds * 1000 - (performance.now() - start)) : Infinity;
+    await delay(Math.min(60000 / config.rate, remaining), undefined, { signal }).catch(() => {});
   }
   await Promise.all(active);
   log({ event: 'summary', scheduled, passed, failed, skipped, duration_ms: Math.round(performance.now() - start) });
