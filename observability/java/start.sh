@@ -2,6 +2,8 @@
 set -eu
 # Preserve caller JVM flags and avoid attaching the same agent twice.
 export DD_ENV="${DD_ENV:-demo}" DD_LOGS_INJECTION="${DD_LOGS_INJECTION:-true}"
+# Render provides the deployed commit without baking mutable version tags into YAML.
+export DD_VERSION="${DD_VERSION:-${RENDER_GIT_COMMIT:-local}}"
 export DD_TRACE_HEADER_TAGS="${DD_TRACE_HEADER_TAGS:-x-request-id:request_id}"
 # JDBI 2's CGLIB SQL-object proxies require this Java 21 compatibility flag.
 if [ "${DD_SERVICE:-}" = "legacy-claim-store" ]; then

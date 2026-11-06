@@ -1,5 +1,32 @@
-# Deployment blueprint stub: Stage C configures Datadog transport and verifies sizing.
+# Official Render Blueprint; credentials are supplied only in Render's secret UI.
 services:
+  - type: pserv
+    name: civil-datadog-agent
+    runtime: image
+    image:
+      url: gcr.io/datadoghq/agent:7.73.0
+    plan: starter
+    region: frankfurt
+    envVars:
+      - key: DD_API_KEY
+        sync: false
+      - key: DD_SITE
+        value: datadoghq.com
+      - key: DD_ENV
+        value: demo
+      - key: DD_HOSTNAME
+        value: civil-money-claims-render
+      - key: PORT
+        value: "8126"
+      - key: DD_APM_ENABLED
+        value: "true"
+      - key: DD_APM_NON_LOCAL_TRAFFIC
+        value: "true"
+      # Render HTTPS log streams export stdout; no Docker socket exists on Render.
+      - key: DD_LOGS_ENABLED
+        value: "false"
+      - key: DD_PROCESS_CONFIG_PROCESS_COLLECTION_ENABLED
+        value: "false"
   - type: web
     name: civil-citizen-ui
     runtime: docker
@@ -12,6 +39,11 @@ services:
       - fromGroup: civil-money-claims-demo
       - key: DD_SERVICE
         value: civil-citizen-ui
+      - key: DD_AGENT_HOST
+        fromService:
+          type: pserv
+          name: civil-datadog-agent
+          property: host
       - key: COOKIE_SECURE
         value: "true"
       - key: SESSION_SECRET
@@ -38,6 +70,11 @@ services:
       - fromGroup: civil-money-claims-demo
       - key: DD_SERVICE
         value: civil-case-api
+      - key: DD_AGENT_HOST
+        fromService:
+          type: pserv
+          name: civil-datadog-agent
+          property: host
       - key: DATABASE_URL
         fromDatabase:
           name: civil-money-claims-db
@@ -56,6 +93,11 @@ services:
       - fromGroup: civil-money-claims-demo
       - key: DD_SERVICE
         value: legacy-claim-store
+      - key: DD_AGENT_HOST
+        fromService:
+          type: pserv
+          name: civil-datadog-agent
+          property: host
       - key: DATABASE_URL
         fromDatabase:
           name: civil-money-claims-db
@@ -79,10 +121,10 @@ envVarGroups:
         value: demo
       - key: DD_SITE
         value: datadoghq.com
-      - key: DD_VERSION
-        value: stage-a
       - key: DD_TRACE_ENABLED
-        value: "false"
+        value: "true"
+      - key: DD_TRACE_AGENT_PORT
+        value: "8126"
       - key: DD_LOGS_INJECTION
         value: "true"
       - key: DEMO_RESET_ENABLED

@@ -1,8 +1,18 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
 import { createApp } from './app';
+import { logger } from './observability/logger';
 
 describe('shared citizen shell', () => {
+  it('logs the original pathname for a mounted feature router', async () => {
+    const info = vi.spyOn(logger, 'info');
+    try {
+      await request(createApp()).get('/respond/check-answers?secret=not-logged');
+      expect(info).toHaveBeenCalledWith(expect.objectContaining({ path: '/respond/check-answers' }), 'HTTP request');
+    } finally {
+      info.mockRestore();
+    }
+  });
   it('renders demo branding without government logos', async () => {
     const res = await request(createApp()).get('/');
     expect(res.status).toBe(200);

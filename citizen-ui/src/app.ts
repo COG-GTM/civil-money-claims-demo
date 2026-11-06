@@ -18,8 +18,10 @@ export function createApp(): express.Express {
     req.requestId = supplied && /^[A-Za-z0-9_-]{1,100}$/.test(supplied) ? supplied : randomUUID();
     res.setHeader('X-Request-ID', req.requestId);
     const started = performance.now();
+    // Mounted routers temporarily strip their prefix from req.path.
+    const requestPath = req.path;
     res.on('finish', () => logger.info({ request_id: req.requestId, method: req.method,
-      path: req.path, status: res.statusCode, duration_ms: Math.round(performance.now() - started) }, 'HTTP request'));
+      path: requestPath, status: res.statusCode, duration_ms: Math.round(performance.now() - started) }, 'HTTP request'));
     next();
   });
   app.get('/health', (_req, res) => res.json({ status: 'UP', service: 'civil-citizen-ui' }));

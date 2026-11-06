@@ -42,8 +42,9 @@ public class DemoResetService {
         }
         FileSystemResource resource=new FileSystemResource(sqlPath);
         if (!resource.isReadable()) throw new IllegalStateException("Demo reset SQL is not available");
-        workflow.ifAvailable(ClaimWorkflow::reset);
         transactions.executeWithoutResult(status -> {
+            // Engine tables and business rows must roll back together if seed SQL fails.
+            workflow.ifAvailable(ClaimWorkflow::reset);
             Connection connection=DataSourceUtils.getConnection(dataSource);
             try {
                 ScriptUtils.executeSqlScript(connection,new EncodedResource(resource,StandardCharsets.UTF_8));

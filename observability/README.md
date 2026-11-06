@@ -30,11 +30,11 @@ the shared entrypoint adds it only when `DD_SERVICE=legacy-claim-store`.
 
 To run Java on the host, set `LOGGING_CONFIG=file:<absolute-path>/observability/java/logback-spring.xml`;
 the Dockerfiles set it already. An API key alone does **not** export APM:
-`DD_TRACE_AGENT_URL` must point to a reachable Datadog agent. For Render, Stage C
-must configure a private agent/collector and log drain (or an official supported
-agent sidecar arrangement), set the unified service tags and secrets, and verify
-ingestion. The Compose Docker-socket collector is local-only, not a Render log
-drain. Do not expose an unauthenticated APM listener on the public internet.
+`DD_TRACE_AGENT_URL` (or `DD_AGENT_HOST` plus port 8126) must reach an agent.
+The root Render Blueprint now configures a private APM agent; Render HTTPS log
+streams must be configured separately as described in the root README.
+No Render deployment has been verified without a Render key. The Compose
+Docker-socket collector is local-only. Never expose the APM listener publicly.
 
 ```sh
 docker compose exec datadog-agent agent status
@@ -109,10 +109,8 @@ default to 0 (run until Ctrl-C); use either for bounded runs. Each request times
 out after 30 seconds. Logs contain progress, reference and request IDs, not form
 bodies. The driver never consumes the reserved seeded smoke claims.
 
-## Parallel-build integration
+## Integrated startup
 
-Root Compose/Makefile, Render, and package files are frozen Stage A files. Stage C
-can fold the supplied overlay into the standard observed startup. B1/B3 own the
-reset/exception endpoints; B4/B5 own the HTML contracts used by the traffic driver.
-Run the driver against the integrated app and confirm deployed APM/logs before
-declaring the full on-call demonstration ready.
+`make up-observability` uses this overlay; `make down` also removes its agent.
+The integrated traffic driver exercises the real services. Verify APM/logs on
+the target environment before calling any deployed on-call demonstration ready.
