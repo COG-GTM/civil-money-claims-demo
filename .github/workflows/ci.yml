@@ -21,7 +21,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
-      - run: node --test ../scripts/traffic.test.ts
+      - run: node --test ../scripts/*.test.ts
       - run: node node_modules/typescript/bin/tsc -p ../scripts/tsconfig.json
   civil-case-api:
     runs-on: ubuntu-latest

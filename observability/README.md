@@ -44,6 +44,34 @@ docker compose logs -f citizen-ui civil-case-api legacy-claim-store
 In Datadog filter logs/APM by `env:demo` and the service names. Request IDs join
 the user-visible error reference to the structured error and its trace.
 
+## Verify the actual target before an on-call demo
+
+Healthy HTTP responses and local telemetry do not prove a deployed target is
+observable. This read-only probe sends a fresh request ID to each service, then
+requires **both indexed logs and server spans** with that ID, service, environment
+and exact deployed SHA in Datadog. It fails closed if either signal is absent.
+The application key needs Logs Read Data and APM Read scopes. No monitors or
+routing are created; keys are sent only to the selected Datadog site.
+
+```sh
+# Set DD_API_KEY and DD_APP_KEY securely in the shell first.
+DD_VERSION="$(git rev-parse HEAD)" TELEMETRY_BASE_URL=https://your-demo.example/f2ec3d90 \
+  node scripts/verify-telemetry.ts
+
+# For the split local Compose stack, override the two API origins:
+DD_VERSION="$(git rev-parse HEAD)" TELEMETRY_BASE_URL=http://localhost:3000 \
+  TELEMETRY_CIVIL_API_URL=http://localhost:8080 TELEMETRY_LEGACY_API_URL=http://localhost:8081 \
+  node scripts/verify-telemetry.ts
+```
+
+Use the SHA actually running on the target, not an unshipped local revision.
+`TELEMETRY_TIMEOUT_SECONDS` defaults to 180 (maximum 600) for ingestion/indexing.
+The JSON output includes target URLs, request IDs and evidence IDs, never keys.
+If it fails, check the **target's** private agent connection, JSON log shipping
+and service remapping, SHA tags, and indexing/retention permissions. In particular,
+the all-in-one image requires external APM **and** a separate stdout collector;
+setting `DD_API_KEY` or reaching `/health` alone is insufficient.
+
 ## Seed and reset
 
 `python3 scripts/generate-seed.py` deterministically regenerates both V300

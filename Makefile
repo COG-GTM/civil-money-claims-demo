@@ -10,7 +10,7 @@ reset:
 	./scripts/reset.sh
 test:
 	cd citizen-ui && npm ci && npm run build && npm test
-	node --test scripts/traffic.test.ts
+	node --test scripts/*.test.ts
 	node citizen-ui/node_modules/typescript/bin/tsc -p scripts/tsconfig.json
 	$(MVN) -f civil-case-api/pom.xml verify
 	$(MVN) -f legacy-claim-store/pom.xml -DskipTests package

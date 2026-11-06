@@ -2,8 +2,14 @@ import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
 import { createApp } from './app';
 import { logger } from './observability/logger';
+import { compile } from 'sass';
 
 describe('shared citizen shell', () => {
+  it('uses Arial for inherited body text without shipping government fonts', () => {
+    const css = compile('src/assets/application.scss', { loadPaths: ['node_modules'], silenceDeprecations: ['import'], quietDeps: true }).css;
+    expect(css).toMatch(/\.govuk-template__body\s*\{\s*font-family: Arial, Helvetica, sans-serif;/);
+    expect(css).not.toMatch(/@font-face|GDS Transport/);
+  });
   it('logs the original pathname for a mounted feature router', async () => {
     const info = vi.spyOn(logger, 'info');
     try {
