@@ -20,6 +20,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @RestControllerAdvice
 public class ApiExceptionHandler {
     private static final Logger LOG=LoggerFactory.getLogger(ApiExceptionHandler.class);
+    private final IncidentReporter incidents;
+    public ApiExceptionHandler(IncidentReporter incidents) { this.incidents=incidents; }
     public record ErrorBody(int status,String code,String message,String requestId,Map<String,String> fieldErrors) {}
 
     @ExceptionHandler(ApiException.class)
@@ -74,6 +76,7 @@ public class ApiExceptionHandler {
     public ResponseEntity<ErrorBody> unhandled(Exception ex,HttpServletRequest request) {
         LOG.atError().addKeyValue("error.kind",ex.getClass().getName())
             .addKeyValue("error.message",ex.getMessage()).setCause(ex).log("Unhandled request failure");
+        incidents.report(ex,request);
         return error(500,"INTERNAL_ERROR","Sorry, there is a problem with the service. Reference: "+request.getAttribute("requestId"),
             Map.of(),request);
     }
