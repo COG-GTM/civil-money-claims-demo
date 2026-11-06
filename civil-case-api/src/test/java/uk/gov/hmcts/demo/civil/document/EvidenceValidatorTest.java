@@ -16,6 +16,14 @@ class EvidenceValidatorTest {
         assertThatThrownBy(() -> validator.validate("proof.pdf","text/plain",pdf)).isInstanceOf(ApiException.class);
         assertThatThrownBy(() -> validator.validate("proof.pdf","application/pdf","hello".getBytes())).isInstanceOf(ApiException.class);
     }
+    // Every accepted kind must resolve back from its MIME type and carry a history label.
+    @Test void everyAcceptedKindHasLabelAndLookup() {
+        for (EvidenceKind kind : EvidenceKind.values()) {
+            assertThat(EvidenceKind.fromContentType(kind.contentType())).contains(kind);
+            assertThat(kind.label()).isNotBlank();
+        }
+        assertThat(EvidenceKind.fromContentType("text/plain")).isEmpty();
+    }
     @Test void acceptsExactlyTenMibRejectsLargerAndEmpty() {
         byte[] allowed=new byte[EvidenceValidator.MAX_SIZE];
         System.arraycopy(pdf,0,allowed,0,pdf.length);

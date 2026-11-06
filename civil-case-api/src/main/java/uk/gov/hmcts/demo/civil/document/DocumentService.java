@@ -12,9 +12,6 @@ import uk.gov.hmcts.demo.civil.web.ApiException;
 
 @Service
 public class DocumentService {
-    private static final Map<String,String> KIND_LABELS = Map.of(
-        "application/pdf", "PDF document",
-        "image/jpeg", "JPEG image");
     private final ClaimRepository claims;
     private final ClaimEventRepository events;
     private final DocumentStore store;
@@ -40,7 +37,9 @@ public class DocumentService {
             String type=validator.validate(name,file.getContentType(),content);
             scanner.scan(content);
             DocumentStore.Metadata result=store.save(claim.id,claim.reference,name,type,content,description,"EVIDENCE");
-            event(claim,"EVIDENCE_UPLOADED","Evidence uploaded ("+KIND_LABELS.get(type).toLowerCase(Locale.ROOT)+")",actor);
+            // Label comes from the same EvidenceKind table the validator accepted the file against.
+            String label=EvidenceKind.fromContentType(type).orElseThrow().label().toLowerCase(Locale.ROOT);
+            event(claim,"EVIDENCE_UPLOADED","Evidence uploaded ("+label+")",actor);
             return result;
         } catch(IOException ex) {
             throw new IllegalStateException("Could not read the uploaded evidence",ex);
