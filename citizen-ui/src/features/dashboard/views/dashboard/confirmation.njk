@@ -1,0 +1,13 @@
+{% extends "layouts/base.njk" %}
+{% from "govuk/components/panel/macro.njk" import govukPanel %}
+{% block pageTitle %}Judgment request submitted{% endblock %}
+{% block content %}
+<div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
+  {{ govukPanel({titleText: "Judgment request submitted", html: "Your claim reference<br><strong>" + (claim.reference | escape) + "</strong>"}) }}
+  <h2 class="govuk-heading-m">What happens next</h2>
+  <p class="govuk-body">Your request for judgment by default has been recorded. A request does not mean that a court has made an order or that the defendant has paid.</p>
+  <div class="govuk-inset-text">This is a demo. No real court application or order has been made.</div>
+  <p class="govuk-body"><a class="govuk-link" href="/dashboard/{{ claim.reference }}">View your claim</a></p>
+  <p class="govuk-body"><a class="govuk-link" href="/dashboard">Back to your claims</a></p>
+</div></div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "layouts/base.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/pagination/macro.njk" import govukPagination %}
+{% block pageTitle %}Your money claims{% endblock %}
+{% block content %}
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds"><h1 class="govuk-heading-xl">Your money claims</h1><p class="govuk-body">View your claims, check for a response and see what you can do next.</p></div>
+  <div class="govuk-grid-column-one-third">{{ govukButton({text: "Make a new claim", href: "/make-claim/eligibility"}) }}</div>
+</div>
+{% if total %}
+<p class="govuk-body">Showing {{ start }} to {{ end }} of {{ total }} claims</p>
+{% for claim in claims %}
+<section class="govuk-summary-card" aria-labelledby="claim-{{ claim.reference }}">
+  <div class="govuk-summary-card__title-wrapper">
+    <h2 class="govuk-summary-card__title" id="claim-{{ claim.reference }}"><a class="govuk-link" href="/dashboard/{{ claim.reference }}">{{ claim.reference }}: {{ claim.defendant.name }}</a></h2>
+    <div>{% set status = claim.state %}{% include "partials/status-tag.njk" %}</div>
+  </div>
+  <div class="govuk-summary-card__content">
+    <dl class="govuk-summary-list">
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Total claim</dt><dd class="govuk-summary-list__value">{{ claim.totalAmount | money }}</dd></div>
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Response deadline</dt><dd class="govuk-summary-list__value">{{ (claim.responseDeadline | date) if claim.responseDeadline else "Not issued yet" }}</dd></div>
+      <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">What happens next</dt><dd class="govuk-summary-list__value">
+        {% if claim.judgmentRequestedAt %}Judgment by default requested on {{ claim.judgmentRequestedAt | date }}.
+        {% elif claim.canRequestJudgment %}<a class="govuk-link" href="/dashboard/{{ claim.reference }}/default-judgment">Request judgment by default<span class="govuk-visually-hidden"> for {{ claim.reference }}</span></a>
+        {% elif claim.state == "DRAFT" %}This claim has not been issued.
+        {% elif claim.state == "SETTLED" %}This claim has been settled.
+        {% elif claim.state == "TRANSFERRED" %}This claim has been transferred for further consideration.
+        {% elif claim.response %}<a class="govuk-link" href="/dashboard/{{ claim.reference }}#response">View the defendant’s response<span class="govuk-visually-hidden"> to {{ claim.reference }}</span></a>
+        {% else %}Waiting for the defendant to respond.{% endif %}
+      </dd></div>
+    </dl>
+  </div>
+</section>
+{% endfor %}
+{{ govukPagination({previous: {href: previousPage} if previousPage else undefined, next: {href: nextPage} if nextPage else undefined}) if previousPage or nextPage }}
+{% else %}
+<h2 class="govuk-heading-m">You have no claims yet</h2>
+<p class="govuk-body">When you make a claim, you can check its progress here.</p>
+{% endif %}
+<p class="govuk-body">Received a claim against you? <a class="govuk-link" href="/respond">Respond to a claim</a>.</p>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "layouts/base.njk" %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% block pageTitle %}{% if errors.length %}Error: {% endif %}Respond to a money claim{% endblock %}
+{% block content %}
+<div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
+  <h1 class="govuk-heading-xl">Respond to a money claim</h1>
+  <p class="govuk-body">Enter the claim reference and security code from your claim letter. You can then view the claim and tell us whether you agree that you owe the money.</p>
+  <form method="post" action="/respond">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    {{ govukInput({ id: "reference", name: "reference", label: {text: "Claim reference"}, hint: {text: "For example, 000MC001 or 000LC001"}, value: values.reference, classes: "govuk-input--width-20", spellcheck: false, attributes: {autocapitalize: "characters"}, errorMessage: {text: fields.reference} if fields.reference else undefined }) }}
+    {{ govukInput({ id: "securityCode", name: "securityCode", label: {text: "Security code"}, hint: {text: "The 8 letters and numbers on your claim letter"}, value: values.securityCode, classes: "govuk-input--width-10", spellcheck: false, autocomplete: "off", attributes: {maxlength: "8", autocapitalize: "characters"}, errorMessage: {text: fields.securityCode} if fields.securityCode else undefined }) }}
+    {{ govukButton({text: "Find claim"}) }}
+  </form>
+  <p class="govuk-body govuk-!-font-size-16">This is a demonstration. Only use the synthetic claim details provided for the demo.</p>
+</div></div>
+{% endblock %}

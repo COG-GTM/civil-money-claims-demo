@@ -1,0 +1,29 @@
+{% extends "layouts/base.njk" %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% block pageTitle %}{% if errors.length %}Error: {% endif %}Check your response{% endblock %}
+{% block content %}
+<div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
+  <span class="govuk-caption-l">Claim {{ claim.reference }}</span>
+  <h1 class="govuk-heading-xl">Check your response</h1>
+  <dl class="govuk-summary-list">
+    <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Your response</dt><dd class="govuk-summary-list__value">{{ responseLabels[answers.type] }}</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="/respond/response">Change<span class="govuk-visually-hidden"> your response</span></a></dd></div>
+    {% if answers.type != "REJECT" %}
+    <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Amount you admit</dt><dd class="govuk-summary-list__value">{{ response.admittedAmount | money }}</dd><dd class="govuk-summary-list__actions">{% if answers.type == "ADMIT_PART" %}<a class="govuk-link" href="/respond/details">Change<span class="govuk-visually-hidden"> amount you admit</span></a>{% endif %}</dd></div>
+    {% endif %}
+    {% if answers.type != "ADMIT_ALL" %}
+    <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Why you disagree</dt><dd class="govuk-summary-list__value" style="white-space: pre-line">{{ answers.reason }}</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="/respond/details">Change<span class="govuk-visually-hidden"> why you disagree</span></a></dd></div>
+    {% endif %}
+    {% if answers.type != "REJECT" %}
+    <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Payment proposal</dt><dd class="govuk-summary-list__value">{{ paymentLabels[answers.paymentOption] }}{% if response.paymentDate %}<br>{{ response.paymentDate | date }}{% endif %}{% if response.instalmentAmount %}<br>{{ response.instalmentAmount | money }} each month{% endif %}</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="/respond/payment">Change<span class="govuk-visually-hidden"> payment proposal</span></a></dd></div>
+    {% endif %}
+  </dl>
+  <h2 class="govuk-heading-m">Confirm and send your response</h2>
+  <p class="govuk-body">Your response will be shared with the claimant. You will not be able to change it through this demo after sending it.</p>
+  <form method="post" action="/respond/check-answers">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    {{ govukCheckboxes({name: "statementOfTruth", idPrefix: "statementOfTruth", errorMessage: {text: fields.statementOfTruth} if fields.statementOfTruth else undefined, items: [{value: "true", text: "I believe that the facts stated in this response are true."}]}) }}
+    {{ govukButton({text: "Submit response"}) }}
+  </form>
+</div></div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "layouts/base.njk" %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% block pageTitle %}{% if errors.length %}Error: {% endif %}How do you respond to the claim?{% endblock %}
+{% block content %}
+<div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
+  <span class="govuk-caption-l">Claim {{ claim.reference }} · {{ claim.totalAmount | money }}</span>
+  <form method="post" action="/respond/response">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    {{ govukRadios({name: "type", idPrefix: "type", value: answers.type,
+      fieldset: {legend: {text: "How do you respond to the claim?", isPageHeading: true, classes: "govuk-fieldset__legend--xl"} },
+      errorMessage: {text: fields.type} if fields.type else undefined,
+      items: [
+        {value: "ADMIT_ALL", text: "I admit all of the claim", hint: {text: "You agree that you owe all of the money claimed."} },
+        {value: "ADMIT_PART", text: "I admit part of the claim", hint: {text: "You agree that you owe some, but not all, of the money claimed."} },
+        {value: "REJECT", text: "I reject all of the claim", hint: {text: "You do not agree that you owe any of the money claimed."} }
+      ]}) }}
+    {{ govukButton({text: "Continue"}) }}
+  </form>
+</div></div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "layouts/base.njk" %}
+{% from "govuk/components/panel/macro.njk" import govukPanel %}
+{% block pageTitle %}Response submitted{% endblock %}
+{% block content %}
+<div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
+  {{ govukPanel({titleText: "Response submitted", html: "Your claim reference<br><strong>" + (claim.reference | escape) + "</strong>"}) }}
+  <p class="govuk-body">Your response to the claim from {{ claim.claimant.name }} has been recorded.</p>
+  <h2 class="govuk-heading-m">What happens next</h2>
+  <p class="govuk-body">The claimant will be told that you have responded. They can review your response and decide what to do next.</p>
+  {% if claim.response.type != "REJECT" %}<p class="govuk-body">Your payment proposal has been included in your response. Admitting the claim does not mean it has been paid or settled.</p>{% endif %}
+  <div class="govuk-inset-text">This is a demo. No real court response, notification or payment has been sent.</div>
+  <p class="govuk-body"><a class="govuk-link" href="/respond/claim">View the claim</a></p>
+  <p class="govuk-body"><a class="govuk-link" href="/respond">Respond to another claim</a></p>
+</div></div>
+{% endblock %}

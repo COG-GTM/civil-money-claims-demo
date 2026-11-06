@@ -1,0 +1,9 @@
+{% extends "layouts/base.njk" %}
+{% block pageTitle %}You cannot respond to this claim{% endblock %}
+{% block content %}
+<div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
+  <h1 class="govuk-heading-xl">You cannot respond to this claim</h1>
+  <p class="govuk-body">Claim {{ claim.reference }} has changed since you started. It may already have a response or a request for judgment.</p>
+  <p class="govuk-body">Your new response has not been submitted. <a class="govuk-link" href="/respond/claim">View the latest claim details</a>.</p>
+</div></div>
+{% endblock %}

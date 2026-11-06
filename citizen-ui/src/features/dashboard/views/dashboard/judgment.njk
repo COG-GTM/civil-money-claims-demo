@@ -1,0 +1,24 @@
+{% extends "layouts/base.njk" %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% block pageTitle %}{% if errors.length %}Error: {% endif %}Request judgment by default{% endblock %}
+{% block content %}
+<div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
+  <span class="govuk-caption-l">Claim {{ claim.reference }}</span>
+  <h1 class="govuk-heading-xl">{{ "Request judgment by default" if eligible else "You cannot request judgment by default" }}</h1>
+  {% if eligible %}
+    <p class="govuk-body">{{ claim.defendant.name }} had until {{ claim.responseDeadline | date }} to respond to your claim. No response has been recorded.</p>
+    <p class="govuk-body">You can ask the court to order the defendant to pay <strong>{{ claim.totalAmount | money }}</strong>. This includes the claim amount, interest and the claim fee.</p>
+    <p class="govuk-body">Do not submit this request if the defendant has already paid you. This demo only supports a request for the full unpaid amount.</p>
+    <form method="post" action="/dashboard/{{ claim.reference }}/default-judgment">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+      {{ govukCheckboxes({name: "statementOfTruth", idPrefix: "statementOfTruth", errorMessage: {text: fields.statementOfTruth} if fields.statementOfTruth else undefined, items: [{value: "true", text: "I confirm that the defendant has not paid the amount I am requesting and I believe the facts stated in this request are true."}]}) }}
+      {{ govukButton({text: "Submit request"}) }}
+    </form>
+  {% else %}
+    <p class="govuk-body">{% if claim.judgmentRequestedAt %}You have already requested judgment by default for this claim.{% elif claim.response %}The defendant has responded to this claim.{% else %}This claim is not eligible. You can only request judgment after the response deadline has passed, if the defendant has not responded and the claim is still awaiting a response or judgment.{% endif %}</p>
+    <p class="govuk-body">No new request has been submitted.</p>
+  {% endif %}
+  <p class="govuk-body"><a class="govuk-link" href="/dashboard/{{ claim.reference }}">Return to claim details</a></p>
+</div></div>
+{% endblock %}
