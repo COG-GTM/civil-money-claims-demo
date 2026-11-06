@@ -3,6 +3,9 @@ server:
 spring:
   application:
     name: legacy-claim-store
+  jackson:
+    deserialization:
+      use-big-decimal-for-floats: true
   datasource:
     username: ${DATABASE_USERNAME:claims}
     password: ${DATABASE_PASSWORD:claims}
