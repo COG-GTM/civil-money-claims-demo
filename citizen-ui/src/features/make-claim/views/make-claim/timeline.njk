@@ -1,0 +1,27 @@
+{% extends "make-claim/base.njk" %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/textarea/macro.njk" import govukTextarea %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% set title = "Timeline of events" %}
+{% block main %}
+<span class="govuk-caption-l">Claim details</span>
+<h1 class="govuk-heading-l">{{ title }}</h1>
+<p class="govuk-body">Tell us what happened and when. Include important dates, such as when an agreement was made, when payment was due and when you asked for payment. We will put the events in date order.</p>
+<form method="post" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+  {% for event in events %}
+  <fieldset class="govuk-fieldset claim-item govuk-!-margin-bottom-6">
+    <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">Event {{ loop.index }}</legend>
+    {{ govukDateInput({id: "event-" + loop.index0, fieldset: {legend: {text: "Date of event"} }, hint: {text: "For example, 27 3 2026"}, errorMessage: fieldErrors["event-" + loop.index0 + "-day"], items: [
+      {id: "event-" + loop.index0 + "-day", name: "events[" + loop.index0 + "][day]", label: "Day", value: event.day, classes: "govuk-input--width-2"},
+      {id: "event-" + loop.index0 + "-month", name: "events[" + loop.index0 + "][month]", label: "Month", value: event.month, classes: "govuk-input--width-2"},
+      {id: "event-" + loop.index0 + "-year", name: "events[" + loop.index0 + "][year]", label: "Year", value: event.year, classes: "govuk-input--width-4"}
+    ]}) }}
+    {{ govukTextarea({id: "event-" + loop.index0 + "-description", name: "events[" + loop.index0 + "][description]", label: {text: "What happened?"}, value: event.description, errorMessage: fieldErrors["event-" + loop.index0 + "-description"], rows: 3, attributes: {maxlength: "2000"} }) }}
+    {% if events.length > 1 %}{{ govukButton({text: "Remove event " + loop.index, name: "action", value: "remove-" + loop.index0, classes: "govuk-button--secondary govuk-!-margin-bottom-0"}) }}{% endif %}
+  </fieldset>
+  {% endfor %}
+  {% if events.length < 20 %}<div>{{ govukButton({text: "Add another event", name: "action", value: "add", classes: "govuk-button--secondary"}) }}</div>{% endif %}
+  {{ govukButton({text: "Save changes" if change else "Save and continue", name: "action", value: "save"}) }}
+</form>
+{% endblock %}

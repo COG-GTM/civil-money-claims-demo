@@ -1,0 +1,17 @@
+{% extends "make-claim/base.njk" %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% set title = question.title %}
+{% block main %}
+<span class="govuk-caption-l">Check you can use this service</span>
+<p class="govuk-body-s govuk-!-margin-bottom-5">Question {{ step }} of 4</p>
+<form method="post" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+  {{ govukRadios({name: question.field, idPrefix: question.field, value: value,
+    fieldset: {legend: {text: question.title, isPageHeading: true, classes: "govuk-fieldset__legend--l"} },
+    hint: {text: question.hint}, errorMessage: fieldErrors[question.field],
+    items: [{value: "yes", text: "Yes"}, {value: "no", text: "No"}]}) }}
+  {{ govukButton({text: "Continue"}) }}
+</form>
+<p class="govuk-body-s">Use made-up details only. This demonstration does not submit a claim to a court.</p>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "make-claim/base.njk" %}
+{% from "govuk/components/task-list/macro.njk" import govukTaskList %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% set title = "Make a money claim" %}
+{% block main %}
+<h1 class="govuk-heading-l">{{ title }}</h1>
+<h2 class="govuk-heading-m">{% if allComplete %}Ready to check and submit{% else %}Your claim is not yet complete{% endif %}</h2>
+<p class="govuk-body">You have completed {{ completed }} of 7 tasks.</p>
+<p class="govuk-body">You can complete these tasks in any order. Your answers are saved as you go in this browser session. Your claim will not be issued until you check your answers and complete the demo payment.</p>
+{% for group in groups %}
+  <h2 class="govuk-heading-m govuk-!-margin-top-7">{{ group.title }}</h2>
+  {{ govukTaskList({idPrefix: "claim-tasks-" + loop.index, items: group.items}) }}
+{% endfor %}
+<h2 class="govuk-heading-m govuk-!-margin-top-7">4. Check and submit your claim</h2>
+{% if allComplete %}
+  <p class="govuk-body">Next, see the claim fee, check your answers and pay using a test card.</p>
+  {{ govukButton({text: "Continue to claim fee", href: "/make-claim/fee"}) }}
+{% else %}
+  <p class="govuk-body">Complete all 7 tasks before checking your answers and paying the claim fee.</p>
+{% endif %}
+<p class="govuk-body-s">This demo saves synthetic drafts only. Do not enter real personal information.</p>
+{% endblock %}

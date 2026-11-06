@@ -1,0 +1,42 @@
+{% extends "make-claim/base.njk" %}
+{% from "govuk/components/file-upload/macro.njk" import govukFileUpload %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
+{% set title = "Upload evidence" %}
+{% block main %}
+{% if uploaded %}{{ govukNotificationBanner({type: "success", text: "Your file has been uploaded"}) }}{% endif %}
+<span class="govuk-caption-l">Prepare your evidence</span>
+<h1 class="govuk-heading-l">{{ title }}</h1>
+<p class="govuk-body">You can upload documents to support your claim, such as invoices, receipts, photographs or correspondence. Only upload made-up information for this demo.</p>
+<p class="govuk-body">You do not have to upload evidence now. You may be asked for it later.</p>
+{% if documents.length %}
+<h2 class="govuk-heading-m">Files added</h2>
+<dl class="govuk-summary-list">
+  {% for document in documents %}
+  <div class="govuk-summary-list__row">
+    <dt class="govuk-summary-list__key claim-filename">{{ document.fileName }}</dt>
+    <dd class="govuk-summary-list__value">{{ (document.sizeBytes / 1024) | round(1) }} KB<br><span class="govuk-body-s">Uploaded · demo scan {{ document.scanStatus | lower }}</span></dd>
+    <dd class="govuk-summary-list__actions">
+      <form method="post" action="/make-claim/evidence/remove{% if change %}?change=true{% endif %}">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+        <input type="hidden" name="documentId" value="{{ document.id }}">
+        <button class="govuk-link claim-link-button" type="submit">Remove<span class="govuk-visually-hidden"> {{ document.fileName }}</span></button>
+      </form>
+    </dd>
+  </div>
+  {% endfor %}
+</dl>
+{% endif %}
+<noscript><div class="govuk-inset-text">You need JavaScript enabled to upload files securely. You can continue without evidence.</div></noscript>
+<form id="evidence-upload" method="post" action="/make-claim/evidence/upload{% if change %}?change=true{% endif %}" enctype="multipart/form-data" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+  {{ govukFileUpload({id: "file", name: "file", label: {text: "Upload a file", classes: "govuk-label--m"}, hint: {text: "PDF, JPG or PNG. Each file must be 10 MB or smaller."}, errorMessage: fieldErrors.file, attributes: {accept: ".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"} }) }}
+  {{ govukButton({text: "Upload file", classes: "govuk-button--secondary", disabled: true, attributes: {id: "upload-button"} }) }}
+  <p id="upload-status" class="govuk-body" role="status" aria-live="polite"></p>
+</form>
+<form method="post" action="/make-claim/evidence{% if change %}?change=true{% endif %}">
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+  {{ govukButton({text: "Save changes" if change else "Save and continue"}) }}
+</form>
+{% endblock %}
+{% block scripts %}<script src="/assets/features/make-claim/evidence.js" defer></script>{% endblock %}

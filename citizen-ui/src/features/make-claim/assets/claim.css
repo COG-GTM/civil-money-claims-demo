@@ -1,0 +1,6 @@
+.claim-item { border-bottom: 1px solid #b1b4b6; padding-bottom: 30px; }
+.claim-prose { white-space: pre-line; overflow-wrap: anywhere; }
+.claim-filename, .govuk-summary-list__value { overflow-wrap: anywhere; }
+.claim-payment-summary { border-top: 5px solid #1d70b8; padding: 20px; background: #f3f2f1; }
+.claim-link-button { border: 0; background: none; font: inherit; padding: 0; cursor: pointer; }
+@media print { .govuk-button, .govuk-header, .govuk-footer, .govuk-back-link { display: none; } }

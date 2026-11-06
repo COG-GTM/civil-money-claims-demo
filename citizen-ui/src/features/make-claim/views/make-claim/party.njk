@@ -1,0 +1,28 @@
+{% extends "make-claim/base.njk" %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% set title = "Your details" if claimant else "Defendant details" %}
+{% block main %}
+<span class="govuk-caption-l">Make a claim</span>
+<h1 class="govuk-heading-l">{{ title }}</h1>
+<p class="govuk-body">{% if claimant %}The claimant is the person or business owed money.{% else %}The defendant is the person or business you say owes you money. Check their name and address carefully.{% endif %} Use made-up details for this demo.</p>
+<form method="post" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+  {{ govukRadios({name: "type", idPrefix: "type", value: values.type, classes: "govuk-radios--inline",
+    fieldset: {legend: {text: "Are you claiming as a person or a business?" if claimant else "Are you claiming against a person or a business?", classes: "govuk-fieldset__legend--m"} },
+    errorMessage: fieldErrors.type, items: [{value: "INDIVIDUAL", text: "Person"}, {value: "BUSINESS", text: "Business"}]}) }}
+  {{ govukInput({id: "name", name: "name", label: {text: "Full name or business name"}, value: values.name, errorMessage: fieldErrors.name, attributes: {maxlength: "200"}, autocomplete: "name" if claimant else "off"}) }}
+  {{ govukInput({id: "email", name: "email", type: "email", label: {text: "Email address" if claimant else "Email address (optional)"}, hint: {text: "We will use this to send updates about your claim." if claimant else "If you know it, add an email address for the defendant."}, value: values.email, errorMessage: fieldErrors.email, autocomplete: "email" if claimant else "off", attributes: {spellcheck: "false"} }) }}
+  {{ govukInput({id: "phone", name: "phone", type: "tel", label: {text: "Telephone number (optional)"}, value: values.phone, errorMessage: fieldErrors.phone, autocomplete: "tel" if claimant else "off", classes: "govuk-input--width-20"}) }}
+  <fieldset class="govuk-fieldset">
+    <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">Postal address</legend>
+    {{ govukInput({id: "line1", name: "line1", label: {text: "Address line 1"}, value: values.line1, errorMessage: fieldErrors.line1, autocomplete: "address-line1" if claimant else "off"}) }}
+    {{ govukInput({id: "line2", name: "line2", label: {text: "Address line 2 (optional)"}, value: values.line2, errorMessage: fieldErrors.line2, autocomplete: "address-line2" if claimant else "off"}) }}
+    {{ govukInput({id: "city", name: "city", label: {text: "Town or city"}, value: values.city, errorMessage: fieldErrors.city, autocomplete: "address-level2" if claimant else "off", classes: "govuk-!-width-two-thirds"}) }}
+    {{ govukInput({id: "postcode", name: "postcode", label: {text: "Postcode"}, value: values.postcode, errorMessage: fieldErrors.postcode, autocomplete: "postal-code" if claimant else "off", classes: "govuk-input--width-10"}) }}
+    {{ govukRadios({name: "country", idPrefix: "country", value: values.country, classes: "govuk-radios--inline", fieldset: {legend: {text: "Country"} }, errorMessage: fieldErrors.country, items: [{value: "England", text: "England"}, {value: "Wales", text: "Wales"}]}) }}
+  </fieldset>
+  {{ govukButton({text: "Save changes" if change else "Save and continue"}) }}
+</form>
+{% endblock %}

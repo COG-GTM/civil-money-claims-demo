@@ -1,0 +1,6 @@
+<dl class="govuk-summary-list">
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Claim amount</dt><dd class="govuk-summary-list__value">{{ quote.principalAmount | money }}</dd></div>
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Interest</dt><dd class="govuk-summary-list__value">{{ quote.interestAmount | money }}</dd></div>
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Claim fee</dt><dd class="govuk-summary-list__value">{{ quote.fee | money }}</dd></div>
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Total claim</dt><dd class="govuk-summary-list__value"><strong>{{ quote.totalAmount | money }}</strong></dd></div>
+</dl>

@@ -1,0 +1,13 @@
+{% extends "make-claim/base.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% set title = "Your claim fee" %}
+{% block main %}
+<h1 class="govuk-heading-l">{{ title }}</h1>
+<p class="govuk-body-l">The fee to make your claim is <strong>{{ quote.fee | money }}</strong>.</p>
+<p class="govuk-body">The fee is based on the amount you are claiming, including any interest. It is added to the total you ask the defendant to pay.</p>
+{% include "make-claim/totals.njk" %}
+{% if interest.claimed %}<p class="govuk-body">Interest is calculated at 8% a year from {{ interest.startDate | date }}{% if quote.calculationDate %} to {{ quote.calculationDate | date }}{% endif %}. The daily rate is {{ quote.dailyInterest | money }}.</p>{% endif %}
+<div class="govuk-inset-text">This is a demo. You will use a test card and no money will be taken.</div>
+{{ govukButton({text: "Check your answers", href: "/make-claim/check-answers"}) }}
+<p class="govuk-body"><a class="govuk-link" href="/make-claim/task-list">Return to the task list</a></p>
+{% endblock %}

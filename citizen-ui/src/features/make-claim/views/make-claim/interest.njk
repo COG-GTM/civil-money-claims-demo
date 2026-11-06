@@ -1,0 +1,24 @@
+{% extends "make-claim/base.njk" %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% set title = "Do you want to claim interest?" %}
+{% block main %}
+<span class="govuk-caption-l">Interest</span>
+<form method="post" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+  {% set interestDate %}
+    {{ govukDateInput({id: "interest-date", fieldset: {legend: {text: "When do you want to claim interest from?", classes: "govuk-fieldset__legend--m"} }, hint: {text: "For example, 27 3 2026. This must be today or in the past."}, errorMessage: fieldErrors["interest-date-day"], items: [
+      {id: "interest-date-day", name: "day", label: "Day", value: values.day, classes: "govuk-input--width-2", attributes: {inputmode: "numeric"} },
+      {id: "interest-date-month", name: "month", label: "Month", value: values.month, classes: "govuk-input--width-2", attributes: {inputmode: "numeric"} },
+      {id: "interest-date-year", name: "year", label: "Year", value: values.year, classes: "govuk-input--width-4", attributes: {inputmode: "numeric"} }
+    ]}) }}
+  {% endset %}
+  {{ govukRadios({idPrefix: "claimed", name: "claimed", value: values.claimed,
+    fieldset: {legend: {text: title, isPageHeading: true, classes: "govuk-fieldset__legend--l"} },
+    hint: {text: "You can claim simple interest at 8% a year. The same rate and start date will apply to all the money you are claiming."}, errorMessage: fieldErrors.claimed,
+    items: [{value: "yes", text: "Yes, claim interest at 8%", conditional: {html: interestDate} }, {value: "no", text: "No, do not claim interest"}]}) }}
+  <p class="govuk-body">We will show the calculated interest and daily rate before you submit your claim. Interest does not compound.</p>
+  {{ govukButton({text: "Save changes" if change else "Save and continue"}) }}
+</form>
+{% endblock %}
