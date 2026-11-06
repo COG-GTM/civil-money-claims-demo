@@ -1,0 +1,33 @@
+server:
+  port: ${PORT:8081}
+spring:
+  application:
+    name: legacy-claim-store
+  datasource:
+    username: ${DATABASE_USERNAME:claims}
+    password: ${DATABASE_PASSWORD:claims}
+    hikari:
+      schema: legacy_cmc
+  flyway:
+    enabled: true
+    schemas: legacy_cmc
+    default-schema: legacy_cmc
+    create-schemas: true
+    out-of-order: true
+    locations: classpath:db/migration/legacy,${LEGACY_SEED_LOCATION:filesystem:../seed/legacy/migrations}
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: never
+demo:
+  reset-enabled: ${DEMO_RESET_ENABLED:false}
+  reset-token: ${DEMO_RESET_TOKEN:}
+  reset-sql: ${DEMO_RESET_SQL:../seed/legacy/reset.sql}

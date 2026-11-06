@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "ES2023", "module": "CommonJS", "moduleResolution": "Node",
+    "lib": ["ES2023", "DOM"], "outDir": "dist", "rootDir": "src",
+    "strict": true, "esModuleInterop": true, "resolveJsonModule": true,
+    "skipLibCheck": true, "sourceMap": true
+  },
+  "include": ["src/**/*.ts"], "exclude": ["src/**/*.test.ts"]
+}

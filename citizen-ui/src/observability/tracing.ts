@@ -1,0 +1,6 @@
+// Loaded before Express so Datadog can instrument modules as they are imported.
+import tracer from 'dd-trace';
+process.env.DD_TRACE_ENABLED ||= 'false';
+tracer.init({ logInjection: true,
+  service: process.env.DD_SERVICE || 'civil-citizen-ui', env: process.env.DD_ENV || 'demo',
+  version: process.env.DD_VERSION || 'local' });

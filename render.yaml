@@ -1,0 +1,91 @@
+# Deployment blueprint stub: Stage C configures Datadog transport and verifies sizing.
+services:
+  - type: web
+    name: civil-citizen-ui
+    runtime: docker
+    plan: starter
+    region: frankfurt
+    dockerfilePath: citizen-ui/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: civil-money-claims-demo
+      - key: DD_SERVICE
+        value: civil-citizen-ui
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: CIVIL_CASE_API_URL
+        fromService:
+          type: web
+          name: civil-case-api
+          property: hostport
+      - key: LEGACY_CLAIM_STORE_URL
+        fromService:
+          type: web
+          name: legacy-claim-store
+          property: hostport
+  - type: web
+    name: civil-case-api
+    runtime: docker
+    plan: standard
+    region: frankfurt
+    dockerfilePath: civil-case-api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: civil-money-claims-demo
+      - key: DD_SERVICE
+        value: civil-case-api
+      - key: DATABASE_URL
+        fromDatabase:
+          name: civil-money-claims-db
+          property: connectionString
+      - key: DEMO_RESET_SQL
+        value: /app/seed/modern/reset.sql
+  - type: web
+    name: legacy-claim-store
+    runtime: docker
+    plan: starter
+    region: frankfurt
+    dockerfilePath: legacy-claim-store/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: civil-money-claims-demo
+      - key: DD_SERVICE
+        value: legacy-claim-store
+      - key: DATABASE_URL
+        fromDatabase:
+          name: civil-money-claims-db
+          property: connectionString
+      - key: LEGACY_SEED_LOCATION
+        value: filesystem:/app/seed/legacy/migrations
+      - key: DEMO_RESET_SQL
+        value: /app/seed/legacy/reset.sql
+databases:
+  - name: civil-money-claims-db
+    plan: basic-256mb
+    region: frankfurt
+    databaseName: claims
+    user: claims
+    postgresMajorVersion: "16"
+    ipAllowList: []
+envVarGroups:
+  - name: civil-money-claims-demo
+    envVars:
+      - key: DD_ENV
+        value: demo
+      - key: DD_SITE
+        value: datadoghq.com
+      - key: DD_VERSION
+        value: stage-a
+      - key: DD_TRACE_ENABLED
+        value: "false"
+      - key: DD_LOGS_INJECTION
+        value: "true"
+      - key: DEMO_RESET_ENABLED
+        value: "true"
+      - key: DEMO_RESET_TOKEN
+        generateValue: true

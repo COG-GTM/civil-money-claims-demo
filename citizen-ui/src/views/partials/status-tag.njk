@@ -1,0 +1,2 @@
+{% from "govuk/components/tag/macro.njk" import govukTag %}
+{{ govukTag({text: status | statusLabel, classes: "govuk-tag--green" if status == "SETTLED" else "govuk-tag--blue"}) }}

@@ -1,0 +1,10 @@
+$govuk-font-family: Arial, Helvetica, sans-serif;
+$govuk-include-default-font-face: false;
+$govuk-assets-path: "/assets/";
+@import "govuk-frontend/dist/govuk/index";
+
+.demo-header-brand { font-size: 25px; font-weight: bold; color: #fff; text-decoration: none; }
+.demo-footer { border-top: 1px solid #b1b4b6; padding: 30px 0; background: #f3f2f1; }
+.demo-nav { display: flex; flex-wrap: wrap; gap: 24px; padding: 16px 0; border-bottom: 1px solid #b1b4b6; }
+.demo-header-service { color: #fff; font-size: 24px; font-weight: bold; text-decoration: none; }
+.demo-phase { margin-bottom: 0; }

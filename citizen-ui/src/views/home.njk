@@ -1,0 +1,15 @@
+{% extends "layouts/base.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% block content %}
+<div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
+  <h1 class="govuk-heading-xl">Make a money claim</h1>
+  <p class="govuk-body-l">You can apply to a county court to claim money you’re owed by a person or business.</p>
+  <p class="govuk-body">Use this demonstration to make a claim, respond to a claim or see how a case progresses.</p>
+  <h2 class="govuk-heading-m">Before you start</h2>
+  <p class="govuk-body">You will need the name and address of the person or business you are claiming from, details of what you are owed and any evidence.</p>
+  <p class="govuk-body">This demo covers claims in England and Wales up to £25,000. No real payment will be taken.</p>
+  {{ govukButton({text: "Start now", href: "/make-claim/eligibility", isStartButton: true}) }}
+  <h2 class="govuk-heading-m">Already have a claim?</h2>
+  <ul class="govuk-list"><li><a class="govuk-link" href="/respond">Respond to a money claim</a></li><li><a class="govuk-link" href="/sign-in">Sign in to your account</a></li></ul>
+</div></div>
+{% endblock %}

@@ -1,0 +1,6 @@
+{% if user %}<nav class="demo-nav govuk-body" aria-label="Service navigation">
+<a class="govuk-link" href="/dashboard">Your claims</a>
+<a class="govuk-link" href="/respond">Respond to a claim</a>
+{% if user.role == "caseworker" %}<a class="govuk-link" href="/caseworker">Manage cases</a><a class="govuk-link" href="/ops">Operations</a>{% endif %}
+<form method="post" action="/sign-out"><input type="hidden" name="_csrf" value="{{ csrfToken }}"><button class="govuk-link" type="submit">Sign out</button></form>
+</nav>{% endif %}

@@ -1,0 +1,67 @@
+name: civil-money-claims-demo
+x-dd: &dd
+  DD_API_KEY: ${DD_API_KEY:-}
+  DD_SITE: ${DD_SITE:-datadoghq.com}
+  DD_ENV: ${DD_ENV:-demo}
+  DD_VERSION: ${DD_VERSION:-local}
+  DD_TRACE_ENABLED: ${DD_TRACE_ENABLED:-false}
+  DD_LOGS_INJECTION: "true"
+  DD_AGENT_HOST: ${DD_AGENT_HOST:-host.docker.internal}
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: claims
+      POSTGRES_USER: claims
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-claims}
+    ports: ["5433:5432"]
+    volumes: ["claims-db:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U claims -d claims"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  civil-case-api:
+    build: { context: ., dockerfile: civil-case-api/Dockerfile }
+    environment:
+      <<: *dd
+      PORT: 8080
+      DD_SERVICE: civil-case-api
+      DATABASE_URL: postgresql://claims:${POSTGRES_PASSWORD:-claims}@postgres:5432/claims
+      DEMO_RESET_ENABLED: "true"
+      DEMO_RESET_TOKEN: ${DEMO_RESET_TOKEN:-local-reset-only}
+      DEMO_RESET_SQL: /app/seed/modern/reset.sql
+    ports: ["8080:8080"]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    depends_on: { postgres: { condition: service_healthy } }
+  legacy-claim-store:
+    build: { context: ., dockerfile: legacy-claim-store/Dockerfile }
+    environment:
+      <<: *dd
+      PORT: 8081
+      DD_SERVICE: legacy-claim-store
+      DATABASE_URL: postgresql://claims:${POSTGRES_PASSWORD:-claims}@postgres:5432/claims
+      LEGACY_SEED_LOCATION: filesystem:/app/seed/legacy/migrations
+      DEMO_RESET_ENABLED: "true"
+      DEMO_RESET_TOKEN: ${DEMO_RESET_TOKEN:-local-reset-only}
+      DEMO_RESET_SQL: /app/seed/legacy/reset.sql
+    ports: ["8081:8081"]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    depends_on: { postgres: { condition: service_healthy } }
+  citizen-ui:
+    build: { context: ., dockerfile: citizen-ui/Dockerfile }
+    environment:
+      <<: *dd
+      PORT: 3000
+      DD_SERVICE: civil-citizen-ui
+      CIVIL_CASE_API_URL: http://civil-case-api:8080
+      LEGACY_CLAIM_STORE_URL: http://legacy-claim-store:8081
+      SESSION_SECRET: ${SESSION_SECRET:-local-demo-change-me-32-characters}
+      COOKIE_SECURE: "false"
+      DEMO_RESET_ENABLED: "true"
+      DEMO_RESET_TOKEN: ${DEMO_RESET_TOKEN:-local-reset-only}
+    ports: ["3000:3000"]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    depends_on: [civil-case-api, legacy-claim-store]
+volumes:
+  claims-db:

@@ -1,0 +1,55 @@
+server:
+  port: ${PORT:8080}
+spring:
+  application:
+    name: civil-case-api
+  datasource:
+    username: ${DATABASE_USERNAME:claims}
+    password: ${DATABASE_PASSWORD:claims}
+    hikari:
+      schema: civil
+  flyway:
+    enabled: true
+    schemas: civil
+    default-schema: civil
+    create-schemas: true
+    out-of-order: true
+    locations: classpath:db/migration/core,classpath:db/migration/camunda,classpath:db/migration/seed
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        default_schema: civil
+camunda:
+  bpm:
+    enabled: ${CAMUNDA_ENABLED:true}
+    database:
+      schema-update: true
+    deployment-resource-pattern: classpath:camunda/*.bpmn
+    history-level: audit
+    generic-properties:
+      properties:
+        history-time-to-live: P30D
+    admin-user:
+      id: ${CAMUNDA_ADMIN_USER:admin}
+      password: ${CAMUNDA_ADMIN_PASSWORD:admin}
+    webapp:
+      application-path: /camunda
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: never
+demo:
+  reset-enabled: ${DEMO_RESET_ENABLED:false}
+  reset-token: ${DEMO_RESET_TOKEN:}
+  reset-sql: ${DEMO_RESET_SQL:../seed/modern/reset.sql}

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en" class="govuk-template">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrfToken }}">
+  <title>{% block pageTitle %}{{ pageTitle or serviceName }}{% endblock %} – HMCTS demo</title>
+  <link rel="stylesheet" href="/assets/application.css">
+</head>
+<body class="govuk-template__body">
+  <a href="#main-content" class="govuk-skip-link" data-module="govuk-skip-link">Skip to main content</a>
+  {% include "partials/header.njk" %}
+  <div class="govuk-width-container">
+    {% include "partials/phase-banner.njk" %}
+    {% include "partials/navigation.njk" %}
+    {% block beforeContent %}{% if backLink %}<a class="govuk-back-link" href="{{ backLink }}">Back</a>{% endif %}{% endblock %}
+    <main class="govuk-main-wrapper" id="main-content">
+      {% include "partials/error-summary.njk" %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  {% include "partials/footer.njk" %}
+  <script type="module" src="/assets/init.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

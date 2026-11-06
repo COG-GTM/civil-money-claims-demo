@@ -1,0 +1,47 @@
+{
+  "name": "civil-citizen-ui",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "build": "tsc && npm run build:assets",
+    "build:assets": "sass --quiet-deps --load-path=node_modules src/assets/application.scss dist/public/application.css && node scripts/copy-assets.cjs",
+    "start": "node --require ./dist/observability/tracing.js dist/server.js",
+    "dev": "npm run build && npm start",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "connect-pg-simple": "10.0.0",
+    "date-fns": "4.1.0",
+    "dd-trace": "5.135.0",
+    "express": "5.1.0",
+    "express-session": "1.18.2",
+    "govuk-frontend": "5.13.0",
+    "helmet": "8.1.0",
+    "jiti": "2.6.1",
+    "memorystore": "1.6.7",
+    "multer": "2.5.0",
+    "nunjucks": "3.2.4",
+    "pg": "8.16.3",
+    "pino": "9.9.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/connect-pg-simple": "7.0.3",
+    "@types/express": "5.0.3",
+    "@types/express-session": "1.18.2",
+    "@types/multer": "2.0.0",
+    "@types/node": "24.3.0",
+    "@types/nunjucks": "3.2.6",
+    "@types/pg": "8.15.5",
+    "@types/supertest": "6.0.3",
+    "sass": "1.92.0",
+    "supertest": "7.1.4",
+    "tsx": "4.20.5",
+    "typescript": "5.9.2",
+    "vitest": "4.1.12"
+  }
+}
