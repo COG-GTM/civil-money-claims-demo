@@ -387,9 +387,14 @@ public class ClaimService {
     }
 
     public void expireDeadlines() {
+        String today = dates.format(dates.today());
+        // Most polls find nothing: check without the advisory lock or row locks, then lock and re-read candidates.
+        try (Handle handle = dbi.open()) {
+            if (!handle.attach(ClaimRepository.class).anyExpired(today)) return;
+        }
         transaction(handle -> {
             ClaimRepository claims = handle.attach(ClaimRepository.class);
-            for (String data : claims.expired(dates.format(dates.today()))) expire(claims, read(data));
+            for (String data : claims.expired(today)) expire(claims, read(data));
             return null;
         });
     }

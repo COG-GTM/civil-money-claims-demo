@@ -29,8 +29,12 @@ public interface ClaimRepository {
     @SqlQuery("SELECT count(*) FROM legacy_cmc.claims")
     long countAll();
 
-    @SqlQuery("SELECT " + DATA + " FROM legacy_cmc.claims WHERE state IN ('ISSUED', 'AWAITING_RESPONSE') "
-        + "AND response_deadline < CAST(:today AS date) ORDER BY reference FOR UPDATE")
+    String EXPIRED = " FROM legacy_cmc.claims WHERE state IN ('ISSUED', 'AWAITING_RESPONSE') AND response_deadline < CAST(:today AS date)";
+
+    @SqlQuery("SELECT EXISTS (SELECT 1" + EXPIRED + ")")
+    boolean anyExpired(@Bind("today") String today);
+
+    @SqlQuery("SELECT " + DATA + EXPIRED + " ORDER BY reference FOR UPDATE")
     List<String> expired(@Bind("today") String today);
 
     @SqlUpdate("INSERT INTO legacy_cmc.claims(id,reference,claimant_id,state,claim_data,security_code,created_at,updated_at) "
